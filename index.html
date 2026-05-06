@@ -931,8 +931,8 @@ function computeP(){
   else if(pBase==='AC'){apexV2='B';len1=AB;len2=BC;}
   else{apexV2='C';len1=AC;len2=BC;}
 
-  var dFromApex1=cumFromApex.map(function(ca){return parseFloat((len1*Math.sqrt(ca/S)).toFixed(4));});
-  var dFromApex2=cumFromApex.map(function(ca){return parseFloat((len2*Math.sqrt(ca/S)).toFixed(4));});
+  var dFromApex1=cumFromApex.map(function(ca){return len1*Math.sqrt(ca/S);});
+  var dFromApex2=cumFromApex.map(function(ca){return len2*Math.sqrt(ca/S);});
 
   var BCknown=(mode==='LLL')||(unknownSide!==pBase);
 
@@ -1091,7 +1091,7 @@ function computeC(){
     return (lo+hi)/2;
   }
 
-  var footXs=cumAreas.map(function(ca){return parseFloat(solveX(ca).toFixed(4));});
+  var footXs=cumAreas.map(function(ca){return solveX(ca);});
 
   // For each foot on perpTo, find intersection with the two adjacent sides
   // if the foot is to the left of px: the section touches vB1 side (sideL1) and
@@ -1130,10 +1130,10 @@ function computeC(){
     var dFromVB2_side=fx>px?(sideL2*(baseLenC-fx)/(baseLenC-px)):null;
     return {
       fx:fx, yTop:yTop,
-      dFromVB1_base:parseFloat(fx.toFixed(4)),
-      dFromVB2_base:parseFloat((baseLenC-fx).toFixed(4)),
-      dFromVB1_side:dFromVB1_side!==null?parseFloat(dFromVB1_side.toFixed(4)):null,
-      dFromVB2_side:dFromVB2_side!==null?parseFloat(dFromVB2_side.toFixed(4)):null,
+      dFromVB1_base:fx,
+      dFromVB2_base:(baseLenC-fx),
+      dFromVB1_side:dFromVB1_side!==null?dFromVB1_side:null,
+      dFromVB2_side:dFromVB2_side!==null?dFromVB2_side:null,
       side:fx<=px?'L1':'L2'
     };
   });
@@ -2163,7 +2163,7 @@ function buildV(d){
   var cosP1=(s1l*s1l+baseLen*baseLen-s2l*s2l)/(2*s1l*baseLen);
   cosP1=Math.max(-1,Math.min(1,cosP1));
   var angP1r=Math.acos(cosP1);
-  var angP1d=parseFloat((angP1r*180/Math.PI).toFixed(4));
+  var angP1d=(angP1r*180/Math.PI);
   var sideLen={AB:AB,BC:BC,AC:AC};
   var st=[];
 
@@ -2190,7 +2190,7 @@ function buildV(d){
       err:'✗ Rifletti: hai due lati e l\'angolo compreso tra loro. Quale teorema lega questi tre elementi al lato mancante? Controlla anche il segno del termine centrale.',
     });
 
-    st.push({type:'numeric',val:parseFloat(computedSideVal.toFixed(4)),unit:'m',
+    st.push({type:'numeric',val:computedSideVal,unit:'m',
       unlock:{lbl:oppSide+'='+ff(computedSideVal)+' m', val:computedSideVal},
       setFlag:'BCknown',
       q:'Applica: <b>'+oppSide+' = √('+adjA+'² + '+adjB+'² − 2·'+adjA+'·'+adjB+'·cos('+gAng+'))</b><br>'
@@ -2267,7 +2267,7 @@ function buildV(d){
       err:'✗ Rileggi la formula: deve contenere SENO (non coseno), un fattore ½, e i due lati adiacenti all\'angolo noto.',
     });
 
-    st.push({type:'numeric',val:parseFloat(S.toFixed(4)),unit:'m²',
+    st.push({type:'numeric',val:S,unit:'m²',
       unlock:{lbl:'S='+ff(S)+' m²', val:S},
       q:'Calcola <b>S = ½ · '+adjS1+' · '+adjS2+' · sin('+gAngS+')</b><br>'
         +'<b style="color:var(--acc)">⚠ Calcolatrice in modalità '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>'
@@ -2301,9 +2301,9 @@ function buildV(d){
       var cv=Math.max(-1,Math.min(1,(l1*l1+l2*l2-l3*l3)/(2*l1*l2)));
       var ar=Math.acos(cv);
       vtxData[V]={g:g,ad0:ad[0],ad1:ad[1],op:op,l1:l1,l2:l2,l3:l3,
-        cosV:parseFloat(cv.toFixed(6)),
-        angD:parseFloat((ar*180/Math.PI).toFixed(4)),
-        angG:parseFloat((ar*200/Math.PI).toFixed(4))};
+        cosV:cv,
+        angD:(ar*180/Math.PI),
+        angG:(ar*200/Math.PI)};
     });
 
     st.push({type:'angleChoice',
@@ -2477,7 +2477,7 @@ function buildP(d){
       ok:'\u2713 Corretto! Ora calcola il valore numerico di '+oppSide+'.',
       err:'\u2717 Con 2 lati e l\u2019angolo compreso tra essi, quale teorema permette di trovare il terzo lato?',
     });
-    st.push({type:'numeric',val:parseFloat(BC.toFixed(4)),unit:'m',
+    st.push({type:'numeric',val:BC,unit:'m',
       unlock:{lbl:oppSide+'='+ff(BC)+' m',val:BC},
       setFlag:'BCknown',
       q:'Applica: <b>'+oppSide+' = \u221a('+adjA+'\u00b2 + '+adjB+'\u00b2 \u2212 2\u00b7'+adjA+'\u00b7'+adjB+'\u00b7cos('+gAng+'))</b><br><b style="color:var(--acc)">\u26a0 Calcolatrice in modalit\u00e0 '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>Inserisci '+oppSide+' in m:',
@@ -2510,7 +2510,7 @@ function buildP(d){
     err:'\u2717 Per l\u2019area con due lati e angolo compreso, quale funzione trigonometrica usi e qual \u00e8 il fattore moltiplicativo?',
   });
 
-  st.push({type:'numeric',val:parseFloat(S.toFixed(4)),unit:'m\u00b2',
+  st.push({type:'numeric',val:S,unit:'m\u00b2',
     unlock:{lbl:'S='+ff(S)+' m\u00b2',val:S},
     q:'Calcola <b>S = \u00bd \u00b7 '+adjA+' \u00b7 '+adjB+' \u00b7 sin('+gAng+')</b><br>'+(d.aU?'<b style="color:var(--acc)">\u26a0 Calcolatrice in modalit\u00e0 '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>':'')+'Inserisci S in m\u00b2:',
     ok:'\u2713 S calcolata correttamente.',
@@ -2545,7 +2545,7 @@ function buildP(d){
     for(var j=nP-1;j>=aIdx;j--) cumParts.push('S'+aLbls[j]);
     var cumLabel=cumParts.join('+');
 
-    st.push({type:'numeric',val:parseFloat(singleArea.toFixed(4)),unit:'m\u00b2',
+    st.push({type:'numeric',val:singleArea,unit:'m\u00b2',
       unlock:{lbl:sLbl+'='+ff(singleArea)+' m\u00b2',val:singleArea},
       q:'Calcola <b>'+sLbl+'</b> = area della fascia pi\u00f9 vicina al vertice '+apexV+':<br><b>'+sLbl+' = S \u00b7 '+quotes[aIdx]+' / '+tQ+'</b><br>Inserisci '+sLbl+' in m\u00b2:',
       ok:'\u2713 '+sLbl+' calcolata correttamente.',
@@ -2600,7 +2600,7 @@ function buildC(d){
       ok:'✓ Corretto! Teorema del coseno. Ora calcola il valore numerico di '+oppS+'.',
       err:'✗ Con 2 lati e l\'angolo compreso tra essi, quale teorema permette di trovare il terzo lato?',
     });
-    st.push({type:'numeric',val:parseFloat(oppVal.toFixed(4)),unit:'m',
+    st.push({type:'numeric',val:oppVal,unit:'m',
       unlock:{lbl:oppS+'='+ff(oppVal)+' m',val:oppVal},
       setFlag:'BCknown',
       q:'Applica: <b>'+oppS+' = √('+adjA+'² + '+adjB+'² − 2·'+adjA+'·'+adjB+'·cos('+gAng+'))</b><br>'
@@ -2656,7 +2656,7 @@ function buildC(d){
       err:'✗ Con 3 lati noti ci sono due metodi generali. Quali sono?',
     });
   }
-  st.push({type:'numeric',val:parseFloat(S.toFixed(4)),unit:'m²',
+  st.push({type:'numeric',val:S,unit:'m²',
     unlock:{lbl:'S='+ff(S)+' m²',val:S},
     q:'Calcola <b>S</b> in m²<br>'+(d.mode!=='LLL'&&d.knownAngle?'<b style="color:var(--acc)">⚠ Calcolatrice in modalità '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>':'')
       +'Inserisci S in m²:',
@@ -2677,7 +2677,7 @@ function buildC(d){
     ok:'✓ Esatto! Da S = ½·base·h → h = (2·S) / base. Le parentesi al numeratore sono essenziali.',
     err:'✗ Ricorda la formula dell\'area: S = ½·base·h. Ricavane h: prima moltiplica S per 2, poi dividi per la base.',
   });
-  st.push({type:'numeric',val:parseFloat(h.toFixed(4)),unit:'m',
+  st.push({type:'numeric',val:h,unit:'m',
     unlock:{lbl:'h='+ff(h)+' m',val:h},
     q:'Calcola <b>h</b> ricavandola dalla formula dell\'area:<br>'
       +'S = ½ · '+d.perpTo+' · h &nbsp;→&nbsp; <b>h = 2 · S / '+d.perpTo+'</b><br>'
@@ -2727,7 +2727,7 @@ function buildC(d){
     var altLabel=isLeft?(vB1+'H'):(vB2+'H');
 
     // Area step
-    st.push({type:'numeric',val:parseFloat(ca.toFixed(4)),unit:'m²',
+    st.push({type:'numeric',val:ca,unit:'m²',
       unlock:{lbl:'S_cum('+qLbls+')='+ff(ca)+' m²',val:ca},
       q:'Calcola l\'area cumulata delle prime <b>'+(i+1)+'</b> aliquote (da '+vB1+'):<br>'
         +'<b>S_cum = S · ('+qLbls+') / '+tQ+'</b><br>'
@@ -2737,7 +2737,7 @@ function buildC(d){
     });
 
     // Foot on perpTo
-    st.push({type:'numeric',val:parseFloat(footDist.toFixed(4)),unit:'m',
+    st.push({type:'numeric',val:footDist,unit:'m',
       unlock:{lbl:footLabel+'='+ff(footDist)+' m',val:footDist},
       drawAfter:i+1,
       q:'Dividente n.'+(i+1)+': piede sul lato <b>'+d.perpTo+'</b> a distanza <b>'+footLabel+'</b> da <b>'+fromV+'</b>.<br>'
@@ -2753,7 +2753,7 @@ function buildC(d){
     });
 
     // Intersection on lateral side
-    st.push({type:'numeric',val:parseFloat(dOnSide.toFixed(4)),unit:'m',
+    st.push({type:'numeric',val:dOnSide,unit:'m',
       unlock:{lbl:sideDistLabel+'='+ff(dOnSide)+' m',val:dOnSide},
       q:'La dividente interseca anche il lato <b>'+sideLabel+'</b> nel punto <b>'+ptSide+'</b>.<br>'
         +'Per similitudine dei triangoli:<br>'
@@ -2767,7 +2767,7 @@ function buildC(d){
 
   // Verifica finale
   var lastArea=areas[nP-1];
-  st.push({type:'numeric',val:parseFloat(lastArea.toFixed(4)),unit:'m²',
+  st.push({type:'numeric',val:lastArea,unit:'m²',
     q:'<b>Verifica finale:</b> calcola l\'ultima aliquota S'+['₁','₂','₃'][nP-1]+':<br>'
       +'<b>S = S · '+quotes[nP-1]+' / '+tQ+'</b><br>'
       +'Se è uguale a S_totale − S_cumulata, i calcoli sono corretti.<br>'
@@ -2851,7 +2851,7 @@ function renderSteps(){
           op:{'A':'BC','B':'AC','C':'AB'}[V],
           cosV:s.cosP1,
           angD:s.angP1d,
-          angG:parseFloat((s.angP1d*200/180).toFixed(4))
+          angG:(s.angP1d*200/180)
         };
         var gk=vd.g,a0=vd.ad0,a1=vd.ad1,opL=vd.op;
         var cosVx=vd.cosV,angDx=vd.angD,angGx=vd.angG;
@@ -2867,9 +2867,8 @@ function renderSteps(){
           if(s.vtxData){
             ['A','B','C'].forEach(function(vv){
               var vd2=s.vtxData[vv];
-              // All three formulas are mathematically correct — student chose which angle in the previous step
               opts4.push({t:'cos('+vd2.g+') = ('+vd2.ad0+'²+'+vd2.ad1+'²−'+vd2.op+'²) / (2·'+vd2.ad0+'·'+vd2.ad1+')',
-                correct:true,g:vd2.g,a0:vd2.ad0,a1:vd2.ad1,op:vd2.op,
+                correct:(vv===V),g:vd2.g,a0:vd2.ad0,a1:vd2.ad1,op:vd2.op,
                 cosV:vd2.cosV,angD:vd2.angD,angG:vd2.angG});
             });
           }
@@ -2898,7 +2897,15 @@ function renderSteps(){
                   inp2.addEventListener('keydown',function(e){if(e.key==='Enter')vb2.click();});
                   vb2.onclick=function(){
                     var cv=parseFloat(inp2.value.trim().replace(',','.'));
-                    if(Math.abs(cv-oo.cosV)<=0.0001){
+                    if(isNaN(cv)){
+                      fb5.className='fb bad'; fb5.innerHTML='✗ Inserisci un numero (usa il punto come separatore decimale).';
+                      inp2.select(); return;
+                    }
+                    if(Math.abs(cv)>1.0001){
+                      fb5.className='fb bad'; fb5.innerHTML='✗ Il coseno è sempre compreso tra −1 e +1. Stai forse inserendo l\'angolo invece del coseno? Inserisci prima il valore di cos('+oo.g+').';
+                      inp2.select(); return;
+                    }
+                    if(Math.abs(cv-oo.cosV)<=0.001){
                       fb5.className='fb ok'; fb5.innerHTML='✓ Corretto! Ora usa <b>acos<\/b> per trovare l\'angolo.';
                       inp2.disabled=true; vb2.disabled=true;
                       // angle input
@@ -2912,7 +2919,15 @@ function renderSteps(){
                       var afb=document.createElement('div'); afb.className='fb';
                       aVb.onclick=function(){
                         var av=parseFloat(aI.value.trim().replace(',','.'));
-                        var okD=Math.abs(av-oo.angD)<=0.05, okG=Math.abs(av-oo.angG)<=0.06;
+                        if(isNaN(av)){
+                          afb.className='fb bad'; afb.innerHTML='✗ Inserisci un numero.';
+                          aI.select(); return;
+                        }
+                        if(Math.abs(av)<=1.0){
+                          afb.className='fb bad'; afb.innerHTML='✗ Stai inserendo il coseno, non l\'angolo. Applica acos al valore trovato e inserisci l\'angolo in gradi (°) o gon.';
+                          aI.select(); return;
+                        }
+                        var okD=Math.abs(av-oo.angD)<=0.1, okG=Math.abs(av-oo.angG)<=0.12;
                         if(okD||okG){
                           afb.className='fb ok';
                           afb.innerHTML='✓ '+oo.g+'='+oo.angD+'°='+oo.angG+' gon. Ora calcola S.';
@@ -2921,7 +2936,8 @@ function renderSteps(){
                           unlockDataValue(oo.g+'='+oo.angD+'°',oo.angD);
                           injectSSteps(afb,oo.g,oo.a0,oo.a1,oo.op,S2);
                         } else {
-                          afb.className='fb bad'; afb.innerHTML='✗ Non è corretto. Controlla l\'unità angolare (°  o gon) e riapplica acos al valore che hai trovato.';
+                          afb.className='fb bad';
+                          afb.innerHTML='✗ Non è corretto. Hai inserito <b>'+av+'</b>. Atteso: <b>'+ff(oo.angD,4)+'°</b> = <b>'+ff(oo.angG,4)+' gon</b>. Controlla l\'unità angolare e riapplica acos.';
                           aI.select(); perf.procErrors++;
                         }
                       };
@@ -2935,7 +2951,7 @@ function renderSteps(){
                       fb5.parentNode.insertBefore(hintAI,ar.nextSibling);
                       fb5.parentNode.insertBefore(afb,hintAI.nextSibling);
                     } else {
-                      fb5.className='fb bad'; fb5.innerHTML='✗ Non è corretto. Riapplica la formula del coseno con i lati '+oo.a0+', '+oo.a1+' e '+oo.op+'.';
+                      fb5.className='fb bad'; fb5.innerHTML='✗ Non è corretto (atteso: ~'+oo.cosV+'). Riapplica: cos('+oo.g+') = ('+oo.a0+'²+'+oo.a1+'²−'+oo.op+'²) / (2·'+oo.a0+'·'+oo.a1+').';
                       inp2.select(); perf.procErrors++;
                     }
                   };
@@ -2970,7 +2986,15 @@ function renderSteps(){
           var afDr=document.createElement('div'); afDr.className='fb';
           aVDr.onclick=function(){
             var av=parseFloat(aIDr.value.trim().replace(',','.'));
-            var okD=Math.abs(av-angDx)<=0.05, okG=Math.abs(av-angGx)<=0.06;
+            if(isNaN(av)){
+              afDr.className='fb bad'; afDr.innerHTML='✗ Inserisci un numero.';
+              aIDr.select(); return;
+            }
+            if(Math.abs(av)<=1.0){
+              afDr.className='fb bad'; afDr.innerHTML='✗ Stai inserendo il coseno, non l\'angolo. Applica acos al valore e inserisci l\'angolo in ° o gon.';
+              aIDr.select(); return;
+            }
+            var okD=Math.abs(av-angDx)<=0.1, okG=Math.abs(av-angGx)<=0.12;
             if(okD||okG){
               afDr.className='fb ok'; afDr.innerHTML='✓ '+gk+'='+angDx+'°='+angGx+' gon. Ora calcola S.';
               aIDr.disabled=true; aVDr.disabled=true;
@@ -2978,7 +3002,8 @@ function renderSteps(){
               unlockDataValue(gk+'='+angDx+'°',angDx);
               injectSSteps(afDr,gk,a0,a1,opL,S2);
             } else {
-              afDr.className='fb bad'; afDr.innerHTML='✗ Non è corretto. Controlla l\'unità angolare nella calcolatrice e riapplica la formula acos[(a²+b²−c²)/(2ab)].';
+              afDr.className='fb bad';
+              afDr.innerHTML='✗ Non è corretto. Hai inserito <b>'+av+'</b>. Atteso: <b>'+ff(angDx,4)+'°</b> = <b>'+ff(angGx,4)+' gon</b>. Controlla l\'unità angolare.';
               aIDr.select(); perf.procErrors++;
             }
           };
@@ -3139,8 +3164,9 @@ function checkNum(inp,s,fb,idx){
   }
   var ok;
   if(s.type==='angle'){
-    ok=Math.abs(val-s.val)<=(s.tol_deg||0.05)||Math.abs(val-s.val_gon)<=(s.tol_gon||0.06);
+    ok=Math.abs(val-s.val)<=(s.tol_deg||0.1)||Math.abs(val-s.val_gon)<=(s.tol_gon||0.12);
   } else {
+    // Tolerance: 0.5% of value OR 0.05 absolute minimum — whichever is larger
     var tol=s.tol!==undefined?s.tol:Math.max(Math.abs(s.val)*0.005,0.05);
     ok=Math.abs(val-s.val)<=tol;
   }
