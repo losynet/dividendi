@@ -2837,7 +2837,7 @@ function renderSteps(){
           g:s.gP1,ad0:s.adj1,ad1:s.adj2,op:s.opp,
           cosV:s.cosP1,
           angD:s.angP1d,
-          angG:parseFloat((s.angP1d*400/360).toFixed(4))
+          angG:parseFloat((s.angP1d*200/180).toFixed(4))
         };
         var gk=vd.g,a0=vd.ad0,a1=vd.ad1,opL=vd.op;
         var cosVx=vd.cosV,angDx=vd.angD,angGx=vd.angG;
@@ -2875,6 +2875,8 @@ function renderSteps(){
                   var nr=document.createElement('div'); nr.className='nrow';
                   var inp2=document.createElement('input'); inp2.type='text'; inp2.className='ninp';
                   inp2.placeholder='cos('+oo.g+') = ?';
+                  var pb2=document.createElement('button'); pb2.type='button'; pb2.className='cb cb-fn cb-sm'; pb2.textContent='\u2190 Calc';
+                  (function(input){pb2.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp2);
                   var vb2=document.createElement('button'); vb2.type='button'; vb2.className='vbtn'; vb2.textContent='Verifica ✓';
                   var fb5=document.createElement('div'); fb5.className='fb';
                   inp2.addEventListener('keydown',function(e){if(e.key==='Enter')vb2.click();});
@@ -2888,6 +2890,8 @@ function renderSteps(){
                       var aI=document.createElement('input'); aI.type='text'; aI.className='ninp';
                       var uLbl=unit==='gon'?'gon':'°';
                       aI.placeholder=oo.g+' in '+uLbl+'...';
+                      var paI=document.createElement('button'); paI.type='button'; paI.className='cb cb-fn cb-sm'; paI.textContent='\u2190 Calc';
+                      (function(input){paI.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aI);
                       var aVb=document.createElement('button'); aVb.type='button'; aVb.className='vbtn'; aVb.textContent='Verifica ✓';
                       var afb=document.createElement('div'); afb.className='fb';
                       aVb.onclick=function(){
@@ -2906,7 +2910,8 @@ function renderSteps(){
                         }
                       };
                       aI.addEventListener('keydown',function(e){if(e.key==='Enter')aVb.click();});
-                      var ab=document.createElement('div'); ab.className='nrow-btns'; ab.appendChild(aVb);
+                      var ab=document.createElement('div'); ab.className='nrow-btns';
+                      ab.appendChild(paI); ab.appendChild(aVb);
                       ar.appendChild(aI); ar.appendChild(ab);
                       fb5.parentNode.insertBefore(ar,fb5.nextSibling);
                       fb5.parentNode.insertBefore(afb,ar.nextSibling);
@@ -2915,7 +2920,8 @@ function renderSteps(){
                       inp2.select(); perf.procErrors++;
                     }
                   };
-                  var nb=document.createElement('div'); nb.className='nrow-btns'; nb.appendChild(vb2);
+                  var nb=document.createElement('div'); nb.className='nrow-btns';
+                  nb.appendChild(pb2); nb.appendChild(vb2);
                   nr.appendChild(inp2); nr.appendChild(nb);
                   fb4.parentNode.insertBefore(nr,fb4.nextSibling);
                   fb4.parentNode.insertBefore(fb5,nr.nextSibling);
@@ -2936,6 +2942,8 @@ function renderSteps(){
           div.innerHTML+='<div class="stepq"><b>Percorso diretto</b>: γ = acos[('+a0+'²+'+a1+'²−'+opL+'²)/(2·'+a0+'·'+a1+')]<br>Inserisci '+gk+' in '+unitLbl+':</div>';
           var aIDr=document.createElement('input'); aIDr.type='text'; aIDr.className='ninp';
           aIDr.placeholder=gk+' in '+unitLbl+'...';
+          var paIDr=document.createElement('button'); paIDr.type='button'; paIDr.className='cb cb-fn cb-sm'; paIDr.textContent='\u2190 Calc';
+          (function(input){paIDr.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aIDr);
           var aVDr=document.createElement('button'); aVDr.type='button'; aVDr.className='vbtn'; aVDr.textContent='Verifica ✓';
           var afDr=document.createElement('div'); afDr.className='fb';
           aVDr.onclick=function(){
@@ -2954,7 +2962,8 @@ function renderSteps(){
           };
           aIDr.addEventListener('keydown',function(e){if(e.key==='Enter')aVDr.click();});
           var arDr=document.createElement('div'); arDr.className='nrow';
-          var abDr=document.createElement('div'); abDr.className='nrow-btns'; abDr.appendChild(aVDr);
+          var abDr=document.createElement('div'); abDr.className='nrow-btns';
+          abDr.appendChild(paIDr); abDr.appendChild(aVDr);
           arDr.appendChild(aIDr); arDr.appendChild(abDr);
           div.appendChild(arDr); div.appendChild(afDr);
         }
@@ -3034,6 +3043,8 @@ function injectSSteps(afterEl,greek,a0,a1,opL,S_){
         var nrow=document.createElement('div'); nrow.className='nrow';
         var inp=document.createElement('input'); inp.type='text'; inp.className='ninp';
         inp.placeholder='S in m²...';
+        var pbS=document.createElement('button'); pbS.type='button'; pbS.className='cb cb-fn cb-sm'; pbS.textContent='\u2190 Calc';
+        (function(input){pbS.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp);
         var vb=document.createElement('button'); vb.type='button'; vb.className='vbtn';
         vb.textContent='Verifica ✓';
         var fb4=document.createElement('div'); fb4.className='fb';
@@ -3056,7 +3067,8 @@ function injectSSteps(afterEl,greek,a0,a1,opL,S_){
             if(pct>0.5)perf.dataErrors++;else perf.procErrors++;
           }
         };
-        var btns=document.createElement('div'); btns.className='nrow-btns'; btns.appendChild(vb);
+        var btns=document.createElement('div'); btns.className='nrow-btns';
+        btns.appendChild(pbS); btns.appendChild(vb);
         nrow.appendChild(inp); nrow.appendChild(btns);
         con.appendChild(nrow); con.appendChild(fb4);
       } else {
