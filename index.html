@@ -143,7 +143,7 @@ header{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 20p
 
 <header>
   <div class="logo">Topo<span>Trainer</span></div>
-  <div class="badge" style="font-size:0.6rem;">v5.0</div>
+  <div class="badge" style="font-size:0.6rem;">v5.1</div>
   <div class="badge">ITT Agraria · 3° Anno · Genio Rurale</div>
   <div class="badge" style="color:var(--acc);border-color:var(--acc);font-size:0.6rem;">Prof. Losenno &amp; Prof. D'Aranno</div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -2157,8 +2157,8 @@ function buildV(d){
   var vertexToGreek={A:'α',B:'β',C:'γ'};
   var gP1=vertexToGreek[vP1]||'?';
   var gVx=vertexToGreek[vx]||'?';
-  var angleAdj={A:['b','c'],B:['a','c'],C:['a','b']};
-  var angleOpp={A:'a',B:'b',C:'c'};
+  var angleAdj={A:['AB','AC'],B:['AB','BC'],C:['AC','BC']};
+  var angleOpp={A:'BC',B:'AC',C:'AB'};
   var adj1=angleAdj[vP1][0], adj2=angleAdj[vP1][1], opp=angleOpp[vP1];
   var cosP1=(s1l*s1l+baseLen*baseLen-s2l*s2l)/(2*s1l*baseLen);
   cosP1=Math.max(-1,Math.min(1,cosP1));
