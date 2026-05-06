@@ -2841,9 +2841,14 @@ function renderSteps(){
         div.appendChild(odFree);
         var fbFree=document.createElement('div'); fbFree.className='fb'; div.appendChild(fbFree);
       } else if(s.type==='angleFormula'){
-        var V=chosenAngleVertex||s.vP1||'A';
+        // V = vertex chosen by student in angleChoice step (or default 'A')
+        // NEVER use s.vP1 as fallback — it is the base vertex, not the angle vertex
+        var V=chosenAngleVertex||'A';
         var vd=s.vtxData&&s.vtxData[V]?s.vtxData[V]:{
-          g:s.gP1,ad0:s.adj1,ad1:s.adj2,op:s.opp,
+          g:{'A':'α','B':'β','C':'γ'}[V]||'α',
+          ad0:{'A':'AB','B':'AB','C':'AC'}[V],
+          ad1:{'A':'AC','B':'BC','C':'BC'}[V],
+          op:{'A':'BC','B':'AC','C':'AB'}[V],
           cosV:s.cosP1,
           angD:s.angP1d,
           angG:parseFloat((s.angP1d*200/180).toFixed(4))
@@ -2862,12 +2867,14 @@ function renderSteps(){
           if(s.vtxData){
             ['A','B','C'].forEach(function(vv){
               var vd2=s.vtxData[vv];
+              // All three formulas are mathematically correct — student chose which angle in the previous step
               opts4.push({t:'cos('+vd2.g+') = ('+vd2.ad0+'²+'+vd2.ad1+'²−'+vd2.op+'²) / (2·'+vd2.ad0+'·'+vd2.ad1+')',
-                correct:(vv===V),g:vd2.g,a0:vd2.ad0,a1:vd2.ad1,op:vd2.op,
+                correct:true,g:vd2.g,a0:vd2.ad0,a1:vd2.ad1,op:vd2.op,
                 cosV:vd2.cosV,angD:vd2.angD,angG:vd2.angG});
             });
           }
-          opts4.push({t:'cos('+gk+') = ('+a0+'+'+a1+'−'+opL+') / (2·'+a0+'·'+a1+')',
+          // Wrong formula: missing squares
+          opts4.push({t:'cos('+gk+') = ('+a0+'+'+a1+'−'+opL+') / (2·'+a0+'·'+a1+')  ← senza i quadrati',
             correct:false,g:gk,a0:a0,a1:a1,op:opL,cosV:cosVx,angD:angDx,angG:angGx});
           opts4.sort(function(){return Math.random()-0.5;});
           var fb4=document.createElement('div'); fb4.className='fb';
