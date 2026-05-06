@@ -1719,6 +1719,7 @@ function drawContent(ctx,W,H,d,sd){
 //   After =, the result becomes the new expression base for chaining.
 
 var cExpr = '';   // the live expression string, shown on display
+var cLastWasEq = false; // true immediately after = so next input replaces
 var cMem  = 0;
 var cAng  = 'deg'; // 'deg' | 'rad'
 
@@ -1748,13 +1749,14 @@ function _fmt(n){
 
 // ── Input: digit or dot ──────────────────────────
 function cDig(d){
+  if(cLastWasEq){ cExpr=''; cLastWasEq=false; }
   cExpr += d;
   _disp();
 }
 
 // ── Input: operator (+,-,*,/) ────────────────────
 function cOp(op){
-  // Replace trailing operator if the user changes their mind
+  cLastWasEq=false; // after =, operator continues with result
   if(cExpr.length > 0 && '+-*/'.indexOf(cExpr[cExpr.length-1]) >= 0){
     cExpr = cExpr.slice(0, -1);
   }
@@ -1764,6 +1766,7 @@ function cOp(op){
 
 // ── Input: parenthesis ──────────────────────────
 function cPar(p){
+  if(cLastWasEq){ cExpr=''; cLastWasEq=false; }
   cExpr += p;
   _disp();
 }
@@ -1824,16 +1827,19 @@ function cEq(){
     numEl.value = r;
     numEl.setAttribute('readonly','');
     cExpr = r;
+    cLastWasEq = true;   // flag: next digit/data replaces
   } else {
     exprEl.textContent = cExpr + ' = Errore';
     numEl.value = 'Errore';
     cExpr = '';
+    cLastWasEq = false;
   }
 }
 
 // ── Clear ────────────────────────────────────────
 function cClear(){
   cExpr = '';
+  cLastWasEq = false;
   document.getElementById('cExprLabel').textContent = ' ';
   var n=document.getElementById('cNum'); n.value=''; n.setAttribute('readonly','');
 }
@@ -2118,7 +2124,10 @@ function _addDatBtn(row, p){
   b.textContent=p.lbl;
   b.style.flex='0 1 auto';
   b.style.padding='5px 7px';
-  b.onclick=function(){ cExpr+=String(p.val); _disp(); };
+  b.onclick=function(){
+    if(cLastWasEq){ cExpr=''; cLastWasEq=false; }
+    cExpr+=String(p.val); _disp();
+  };
   row.appendChild(b);
 }
 
