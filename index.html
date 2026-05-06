@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TopoTrainer v6.0 — Divisioni Particelle Triangolari</title>
+<title>TopoTrainer v6.5 — Divisioni Particelle Triangolari</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -143,7 +143,7 @@ header{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 20p
 
 <header>
   <div class="logo">Topo<span>Trainer</span></div>
-  <div class="badge" style="font-size:0.6rem;">v6.0</div>
+  <div class="badge" style="font-size:0.6rem;">v6.5</div>
   <div class="badge">ITT Agraria · 3° Anno · Genio Rurale</div>
   <div class="badge" style="color:var(--acc);border-color:var(--acc);font-size:0.6rem;">Prof. Losenno &amp; Prof. D'Aranno</div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -786,6 +786,7 @@ function computeV(){
     baseName:baseName,baseLen:baseLen,s1n:s1n,s1l:s1l,s2n:s2n,s2l:s2l,
     knownSides:knownSides,unknownSide:unknownSide,knownAngle:knownAngle,
     aVal:aVal,aU:aU,mode:mode,apexSVal:apexSVal,
+    BCknown:(mode==='LLL'||!unknownSide),
     P1name:P1name,P2name:P2name,minVxSel:minVxSel,maxVxSel:maxVxSel};
 }
 
@@ -1156,6 +1157,7 @@ function computeC(){
     footXs:footXs,dividers:dividers,cumAreas:cumAreas,
     aVal:aVal,aU:aU,knownAngle:knownAngle,unknownSide:unknownSide,
     knownSides:knownSides,mode:mode,apexSVal:apexSVal,
+    BCknown:(mode==='LLL'||!unknownSide),
     minVxC:minVxC,maxVxC:maxVxC};
 }
 // NOTE: cwrap listeners are attached in initListeners() called at DOM ready
@@ -1305,7 +1307,7 @@ function drawContent(ctx,W,H,d,sd){
 
     // showN: how many dividers to draw (partial reveal or all)
     var showN = sd ? divPts.length : Math.min(partialDividers, divPts.length);
-    var dC2=[CA,CB,CG]; var ptL2=['D','E'];  // D and E only; EC is implicit
+    var dC2=[CA,CB,CG]; var ptL2=['E','F'];  // E and F are the division points on base
 
     // Area fills for completed sub-triangles
     // showN dividers → showN filled areas. The LAST area (after last divider) fills only when sd=true.
@@ -1624,7 +1626,7 @@ function drawContent(ctx,W,H,d,sd){
     var showNP=sd?divPts.length:Math.min(partialDividers,divPts.length);
     var fillNP=sd?d.nP:showNP;
     var dColB=[CA,CB,CG];
-    var ptL1B=['F','D'],ptL2B=['G','E'];
+    var ptL1B=['P','M'],ptL2B=['Q','N'];
 
     // Area fills
     for(var i=0;i<fillNP;i++){
@@ -2406,11 +2408,20 @@ function buildV(d){
     err:'✗ Stessa altezza h → base ∝ area direttamente. La radice quadrata è solo per il Caso B (triangoli simili).',
   });
 
-  // Name first segment correctly: vx=A->base=BC->starts at B->seg=BD; vx=B->base=AC->starts at A->seg=AD; vx=C->base=AB->starts at A->seg=AD
+  // Segment labels follow book convention:
+  // Points on base: P1 → ptE → ptF → P2
+  // Segments: P1E, EF, FP2  (e.g. BE, EF, FC for base=BC, P1=B, P2=C)
   var _p1=vP1arr[0]||'B';
-  var seg1=_p1+'D', seg2='DE', seg3='EB';
+  var _p2=d.baseName.replace(_p1,'');  // the other vertex of base
+  var seg1=_p1+'E', seg2='EF', seg3='F'+_p2;
+  var divPtLabels=['E','F'];  // point labels on the base
 
-  // Step: calcola seg1 (dividente 1) — draw partial after correct
+  // Store labels in d for canvas drawing
+  d._segLabels=[seg1,seg2,seg3];
+  d._divPtLabels=divPtLabels;
+  d._p1=_p1; d._p2=_p2;
+
+  // Step: calcola seg1
   st.push({type:'numeric',val:baseDists[0],unit:'m',
     unlock:{lbl:seg1+'='+ff(baseDists[0])+' m', val:baseDists[0]},
     drawAfter:1,
@@ -2431,13 +2442,13 @@ function buildV(d){
       err:'✗ Non è corretto. Formula: S₂ = S × quota₂ / somma_di_tutte_le_quote.',
     });
     st.push({type:'numeric',val:baseDists[1],unit:'m',
-      unlock:{lbl:'DE='+ff(baseDists[1])+' m', val:baseDists[1]},
+      unlock:{lbl:seg2+'='+ff(baseDists[1])+' m', val:baseDists[1]},
       drawAfter:2,
-      q:'Calcola la distanza <b>DE</b> (secondo segmento su '+baseName+'):<br>'
-        +'<b>DE = '+baseName+' · S₂ / S</b><br>'
-        +'Inserisci DE in m:',
-      ok:'✓ DE calcolato correttamente.',
-      err:'✗ Non è corretto. Formula: DE = '+baseName+' × S₂ / S.',
+      q:'Calcola la distanza <b>'+seg2+'</b> (secondo segmento su '+baseName+'):<br>'
+        +'<b>'+seg2+' = '+baseName+' · S₂ / S</b><br>'
+        +'Inserisci '+seg2+' in m:',
+      ok:'✓ '+seg2+' calcolato correttamente.',
+      err:'✗ Non è corretto. Formula: '+seg2+' = '+baseName+' × S₂ / S.',
     });
   }
 
@@ -2451,20 +2462,20 @@ function buildV(d){
       err:'✗ Non è corretto. Formula: S₃ = S × quota₃ / somma_di_tutte_le_quote.',
     });
     st.push({type:'numeric',val:baseDists[2],unit:'m',
-      unlock:{lbl:'EF='+ff(baseDists[2])+' m', val:baseDists[2]},
+      unlock:{lbl:seg3+'='+ff(baseDists[2])+' m', val:baseDists[2]},
       drawAfter:3,
-      q:'Calcola la distanza <b>EF</b> (terzo segmento su '+baseName+'):<br>'
-        +'<b>EF = '+baseName+' · S₃ / S</b><br>'
-        +'Inserisci EF in m:',
-      ok:'✓ EF calcolato correttamente.',
-      err:'✗ Non è corretto. Formula: EF = '+baseName+' × S₃ / S.',
+      q:'Calcola la distanza <b>'+seg3+'</b> (terzo segmento su '+baseName+'):<br>'
+        +'<b>'+seg3+' = '+baseName+' · S₃ / S</b><br>'
+        +'Inserisci '+seg3+' in m:',
+      ok:'✓ '+seg3+' calcolato correttamente.',
+      err:'✗ Non è corretto. Formula: '+seg3+' = '+baseName+' × S₃ / S.',
     });
   }
 
   var segSum=d.baseDists.slice(0,nP).reduce(function(a,b){return a+b;},0);
   st.push({type:'numeric',val:segSum,unit:'m',tol:0.1,
     q:'<b>Verifica:</b> la somma dei segmenti deve uguagliare '+baseName+'='+ff(baseLen)+' m.<br>'
-      +(nP===2?seg1+' + DE':seg1+' + DE + EB')+' = '+d.baseDists.slice(0,nP).map(function(x){return ff(x);}).join(' + ')+'<br>'
+      +[seg1,seg2,seg3].slice(0,nP).join(' + ')+' = '+d.baseDists.slice(0,nP).map(function(x){return ff(x);}).join(' + ')+'<br>'
       +'Inserisci la somma in m:',
     ok:'✓ Verifica superata! I segmenti sommano correttamente al lato '+baseName+'. Ottimo lavoro.',
     err:'✗ La somma deve essere '+ff(baseLen)+' m. Ricalcola i segmenti.',
@@ -3157,13 +3168,16 @@ function finalize(){
   addR(grid,'S',ff(d.S),'m\u00b2');
   d.areas.forEach(function(a,i){addR(grid,'S'+['\u2081','\u2082','\u2083'][i],ff(a),'m\u00b2');});
   if(d.type==='vertex'){
-    [_p1l+'D','DE','EB'].slice(0,d.nP).forEach(function(l,i){addR(grid,l,ff(d.baseDists[i]),'m');});
+    var _p1x=d._p1||(d.vx==='A'?'B':d.vx==='B'?'A':'A');
+    var _p2x=d._p2||(d.vx==='A'?'C':d.vx==='B'?'C':'B');
+    var _sN=[_p1x+'E','EF','F'+_p2x];
+    _sN.slice(0,d.nP).forEach(function(l,i){addR(grid,l,ff(d.baseDists[i]),'m');});
   } else {
     var _pB2=d.pBase||'BC',_apV2=_pB2==='BC'?'A':_pB2==='AC'?'B':'C';
     addR(grid,_pB2,ff({BC:d.BC,AC:d.AC,AB:d.AB}[_pB2]),'m');
     if(d.dFromApex1){
-      d.dFromApex1.forEach(function(v,i){addR(grid,_apV2+['D','F'][i],ff(v),'m');});
-      d.dFromApex2.forEach(function(v,i){addR(grid,_apV2+['E','G'][i],ff(v),'m');});
+      d.dFromApex1.forEach(function(v,i){addR(grid,_apV2+['M','P'][i],ff(v),'m');});
+      d.dFromApex2.forEach(function(v,i){addR(grid,_apV2+['N','Q'][i],ff(v),'m');});
     }
   }
 }
@@ -3175,7 +3189,7 @@ function addR(grid,lbl,val,unit){
 }
 
 function resetSolver(){
-  stepIdx=0;steps=[];solverData=null;showDiv=false;
+  stepIdx=0;steps=[];solverData=null;showDiv=false;autoSolveActive=false;
   chosenAngleVertex=null;chosenCalcPath=null;drawnAngle=null;partialDividers=0;partialDividers=0;drawnAngle=null;
   var dbr=document.getElementById('dataBtnRow');if(dbr)dbr.innerHTML='';
   document.getElementById('solv').innerHTML='<div class="solver-idle">Inserisci i dati e premi<br><b style="color:var(--acc)">&#9654; Avvia GeoSolver</b><br>per iniziare la sessione guidata.</div>';
@@ -3249,6 +3263,8 @@ function autoSolve(){
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
 }
 
+var autoSolveActive = false;  // true when solution was auto-generated
+
 function runAutoSolve(){
   // Compute the solution data
   var d=curCase==='vertex'?computeV():curCase==='perp'?computeC():computeP();
@@ -3257,6 +3273,8 @@ function runAutoSolve(){
     return;
   }
   solverData=d;
+  autoSolveActive=true;
+  d.BCknown=true;  // show computed side value in canvas
   showDiv=true;
   zoom=1;panX=0;panY=0;
 
@@ -3269,7 +3287,8 @@ function runAutoSolve(){
   pill.textContent=curCase==='vertex'?'Caso A':curCase==='perp'?'Caso C':'Caso B';
   pill.classList.remove('hide');
   partialDividers=99;
-  requestAnimationFrame(function(){drawScene();});
+  // Double rAF ensures BCknown is visible before draw
+  requestAnimationFrame(function(){requestAnimationFrame(function(){drawScene();});});
 
   // Build and display the solution panel
   var solv=document.getElementById('solv');
@@ -3288,16 +3307,18 @@ function runAutoSolve(){
     if(d.unknownSide) results.push({lbl:d.unknownSide+' (calcolato)', val:ff(d[d.unknownSide.toLowerCase()]||{AB:d.AB,BC:d.BC,AC:d.AC}[d.unknownSide]), unit:'m'});
     results.push({lbl:'S totale', val:ff(d.S), unit:'m²'});
     d.areas.forEach(function(a,i){ results.push({lbl:'S'+'₁₂₃'[i]+' (quota '+d.quotes[i]+')', val:ff(a), unit:'m²'}); });
+    var _p1r=d._p1||(d.vx==='A'?'B':d.vx==='B'?'A':'A');
+    var _p2r=d._p2||(d.vx==='A'?'C':d.vx==='B'?'C':'B');
+    var _sNr=[_p1r+'E','EF','F'+_p2r];
     d.baseDists.forEach(function(b,i){
-      var lbl=i===0?'BD':i===1?'DE':'EF';
-      results.push({lbl:lbl, val:ff(b), unit:'m'});
+      results.push({lbl:_sNr[i], val:ff(b), unit:'m'});
     });
   } else if(d.type==='parallel'){
     if(d.unknownSide) results.push({lbl:d.unknownSide+' (calcolato)', val:ff({AB:d.AB,BC:d.BC,AC:d.AC}[d.unknownSide]), unit:'m'});
     results.push({lbl:'S totale', val:ff(d.S), unit:'m²'});
     d.areas.forEach(function(a,i){ results.push({lbl:'S'+'₁₂₃'[i]+' (quota '+d.quotes[i]+')', val:ff(a), unit:'m²'}); });
     var apex=d.apexV2||'C';
-    var ptL1=['D','F'], ptL2=['E','G'];
+    var ptL1=['M','P'], ptL2=['N','Q'];
     (d.dFromApex1||[]).forEach(function(v,i){ results.push({lbl:apex+ptL1[i]+' su '+((d.pBase==='BC'?'AB':d.pBase==='AC'?'AB':'CA')), val:ff(v), unit:'m'}); });
     (d.dFromApex2||[]).forEach(function(v,i){ results.push({lbl:apex+ptL2[i]+' su '+((d.pBase==='BC'?'AC':d.pBase==='AC'?'BC':'CB')), val:ff(v), unit:'m'}); });
   } else if(d.type==='perp'){
@@ -3375,6 +3396,217 @@ function computeGrade(){
     sA:sA,sB:sB,sC:sC,sD:sD,dC:dC,dD:dD};
 }
 
+// ─── Build full solution steps HTML for report ──────────────────
+function buildAutoSolveSteps(d){
+  var rows=[];
+  var n=1;
+  function row(label, formula, result, unit){
+    var bg=rows.length%2?'#f9f9f9':'#fff';
+    rows.push('<tr style="background:'+bg+'">'
+      +'<td style="padding:5px 8px;border:1px solid #ddd;text-align:center;font-weight:bold;width:28px;">'+n+'</td>'
+      +'<td style="padding:5px 8px;border:1px solid #ddd;font-size:10px;color:#555;width:160px;">'+label+'</td>'
+      +'<td style="padding:5px 8px;border:1px solid #ddd;font-family:monospace;font-size:11px;">'+formula+'</td>'
+      +'<td style="padding:5px 8px;border:1px solid #ddd;font-weight:bold;color:#0a3;white-space:nowrap;">'+result+(unit?' <span style="font-size:9px;color:#888;">'+unit+'</span>':'')+'</td>'
+      +'</tr>');
+    n++;
+  }
+  function sep(title){
+    rows.push('<tr><td colspan="4" style="padding:6px 8px;background:#f0a500;color:#000;font-weight:bold;font-size:10px;letter-spacing:1px;text-transform:uppercase;border:1px solid #ddd;">'+title+'</td></tr>');
+  }
+
+  var AB=d.AB, BC=d.BC, AC=d.AC, S=d.S, tQ=d.tQ;
+  var aUlbl=d.aU==='grad'?' gon':d.aU==='rad'?' rad':'&deg;';
+
+  // ━━ PASSO 0: LATO MANCANTE (se LLA) ━━
+  if(d.mode&&d.mode!=='LLL'&&d.unknownSide){
+    sep('Passo 0 — Calcolo lato mancante (Teorema del coseno)');
+    var adj0,adj1,ang,oppV,oppVal;
+    if(d.mode==='LLA_a'){adj0='AB';adj1='AC';ang='&alpha;';oppV='BC';oppVal=BC;}
+    else if(d.mode==='LLA_b'){adj0='AB';adj1='BC';ang='&beta;';oppV='AC';oppVal=AC;}
+    else{adj0='AC';adj1='BC';ang='&gamma;';oppV='AB';oppVal=AB;}
+    var av=d.aVal, avRad=d.aU==='grad'?av*Math.PI/200:d.aU==='deg'?av*Math.PI/180:av;
+    row('Dati noti',
+      ang+' = '+ff(av,4)+aUlbl+' &emsp; '+adj0+' = '+ff({AB:AB,BC:BC,AC:AC}[adj0])+' m &emsp; '+adj1+' = '+ff({AB:AB,BC:BC,AC:AC}[adj1])+' m',
+      '—','');
+    row('Formula',
+      oppV+' = &radic;('+adj0+'&sup2; + '+adj1+'&sup2; &minus; 2&middot;'+adj0+'&middot;'+adj1+'&middot;cos('+ang+'))',
+      '—','');
+    row('Sostituzione',
+      oppV+' = &radic;('+ff({AB:AB,BC:BC,AC:AC}[adj0])+'&sup2; + '+ff({AB:AB,BC:BC,AC:AC}[adj1])+'&sup2; &minus; 2&middot;'+ff({AB:AB,BC:BC,AC:AC}[adj0])+'&middot;'+ff({AB:AB,BC:BC,AC:AC}[adj1])+'&middot;cos('+ff(av,4)+aUlbl+'))',
+      ff(oppVal,4),'m');
+  }
+
+  // ━━ PASSO 1: ANGOLO α (solo se LLL — 3 lati noti) ━━
+  if(d.mode==='LLL'){
+    sep('Passo 1 — Calcolo angolo &alpha; (Teorema del coseno)');
+    var cosA=(AB*AB+AC*AC-BC*BC)/(2*AB*AC);
+    var angA_r=Math.acos(cosA);
+    var angA_d=angA_r*180/Math.PI;
+    var angA_g=angA_d*200/180;
+    row('Numeratore',
+      'AB&sup2; + AC&sup2; &minus; BC&sup2; = '+ff(AB)+'&sup2; + '+ff(AC)+'&sup2; &minus; '+ff(BC)+'&sup2;',
+      ff(AB*AB+AC*AC-BC*BC,2),'');
+    row('Denominatore',
+      '2 &middot; AB &middot; AC = 2 &middot; '+ff(AB)+' &middot; '+ff(AC),
+      ff(2*AB*AC,2),'');
+    row('cos(&alpha;)',
+      'cos(&alpha;) = '+ff(AB*AB+AC*AC-BC*BC,2)+' / '+ff(2*AB*AC,2),
+      ff(cosA,8),'');
+    row('&alpha; = acos(cos(&alpha;))',
+      '&alpha; = acos('+ff(cosA,8)+')',
+      ff(angA_d,6)+'&deg; = '+ff(angA_g,6)+' gon','');
+  }
+
+  // ━━ PASSO 2: AREA TOTALE S ━━
+  sep('Passo '+(d.mode==='LLL'?'2':'1')+' — Calcolo area totale S');
+  if(d.mode==='LLL'){
+    var cosA2=(AB*AB+AC*AC-BC*BC)/(2*AB*AC);
+    var angA_r2=Math.acos(cosA2);
+    row('Formula',
+      'S = &frac12; &middot; AB &middot; AC &middot; sin(&alpha;)',
+      '—','');
+    row('Sostituzione',
+      'S = &frac12; &middot; '+ff(AB)+' &middot; '+ff(AC)+' &middot; sin('+ff(angA_r2*180/Math.PI,4)+'&deg;)',
+      ff(S,4),'m&sup2;');
+  } else if(d.mode&&d.mode!=='LLL'&&d.knownAngle){
+    var adjS0=d.mode==='LLA_a'?'AB':d.mode==='LLA_b'?'AB':'AC';
+    var adjS1=d.mode==='LLA_a'?'AC':d.mode==='LLA_b'?'BC':'BC';
+    var l0={AB:AB,BC:BC,AC:AC}[adjS0], l1={AB:AB,BC:BC,AC:AC}[adjS1];
+    var avR2=d.aU==='grad'?d.aVal*Math.PI/200:d.aU==='deg'?d.aVal*Math.PI/180:d.aVal;
+    row('Formula',
+      'S = &frac12; &middot; '+adjS0+' &middot; '+adjS1+' &middot; sin('+d.knownAngle+')',
+      '—','');
+    row('Sostituzione',
+      'S = &frac12; &middot; '+ff(l0)+' &middot; '+ff(l1)+' &middot; sin('+ff(d.aVal,4)+aUlbl+')',
+      ff(S,4),'m&sup2;');
+  }
+
+  // ━━ CASO A ━━
+  if(d.type==='vertex'){
+    sep('Passo '+(d.mode==='LLL'?'3':'2')+' — Calcolo aliquote (aree parziali)');
+    row('Somma quote','m + n + p = '+d.quotes.join(' + '), String(tQ),'');
+    d.quotes.forEach(function(q,i){
+      row('S'+(i+1)+' (quota '+q+')',
+        'S &middot; '+q+' / '+tQ+' = '+ff(S,4)+' &middot; '+q+' / '+tQ,
+        ff(d.areas[i],4),'m&sup2;');
+    });
+
+    sep('Passo '+(d.mode==='LLL'?'4':'3')+' — Calcolo segmenti su '+d.baseName+' (proporzionalit&agrave; diretta)');
+    row('Proprietà','Stessa altezza h dal vertice '+d.vx+' &rarr; base &prop; area (proporzionalit&agrave; DIRETTA)','—','');
+    var _p1s=d._p1||(d.vx==='A'?'B':d.vx==='B'?'A':'A');
+    var _p2s=d._p2||(d.vx==='A'?'C':d.vx==='B'?'C':'B');
+    var segN=[_p1s+'E','EF','F'+_p2s];
+    d.baseDists.forEach(function(b,i){
+      row(segN[i],
+        d.baseName+' &middot; S'+(i+1)+' / S = '+ff(d.baseLen)+' &middot; '+ff(d.areas[i],4)+' / '+ff(S,4),
+        ff(b,4),'m');
+    });
+
+    sep('Verifica');
+    var sumDist=d.baseDists.reduce(function(a,b){return a+b;},0);
+    row('Somma segmenti',
+      d.baseDists.map(function(b,i){return segN[i]+'='+ff(b,4);}).join(' + '),
+      ff(sumDist,4)+' &asymp; '+ff(d.baseLen),'m');
+  }
+
+  // ━━ CASO B ━━
+  if(d.type==='parallel'){
+    var apexV=d.apexV2||'C';
+    var s1N=d.pBase==='BC'?'AB':d.pBase==='AC'?'AB':'CA';
+    var s2N=d.pBase==='BC'?'AC':d.pBase==='AC'?'BC':'CB';
+    var len1=d.len1, len2=d.len2;
+    var stepBase=d.mode==='LLL'?3:2;
+
+    sep('Passo '+stepBase+' — Calcolo aliquote (aree parziali)');
+    row('Somma quote','m + n + p = '+d.quotes.join(' + '),String(tQ),'');
+    d.quotes.forEach(function(q,i){
+      row('S'+(i+1)+' (quota '+q+')',
+        'S &middot; '+q+' / '+tQ+' = '+ff(S,4)+' &middot; '+q+' / '+tQ,
+        ff(d.areas[i],4),'m&sup2;');
+    });
+
+    sep('Passo '+(stepBase+1)+' — Distanze dall\'apice '+apexV+' (triangoli simili: distanza = lato &middot; &radic;(area_cum / S))');
+    row('Principio','Triangoli simili &rarr; aree &prop; quadrati dei lati &rarr; lato = L &middot; &radic;(S_cum / S)','—','');
+    var ptL1=['M','P'], ptL2=['N','Q'];
+    var cFA=d.cumFromApex||[];
+    cFA.forEach(function(ca,i){
+      // cumulative areas from apex label
+      var cumParts=[];
+      for(var j=d.nP-1;j>=d.nP-1-i;j--) cumParts.push('S'+(j+1));
+      var cumLbl=cumParts.join('+');
+      row(apexV+ptL1[i]+' su '+s1N,
+        s1N+' &middot; &radic;('+cumLbl+' / S) = '+ff(len1)+' &middot; &radic;('+ff(ca,4)+' / '+ff(S,4)+')',
+        ff(d.dFromApex1[i],4),'m');
+      row(apexV+ptL2[i]+' su '+s2N,
+        s2N+' &middot; &radic;('+cumLbl+' / S) = '+ff(len2)+' &middot; &radic;('+ff(ca,4)+' / '+ff(S,4)+')',
+        ff(d.dFromApex2[i],4),'m');
+    });
+  }
+
+  // ━━ CASO C ━━
+  if(d.type==='perp'){
+    var stepBase2=d.mode==='LLL'?3:2;
+
+    sep('Passo '+stepBase2+' — Altezza h dal vertice '+d.vOpp+' al lato '+d.perpTo);
+    row('Formula','h = (2 &middot; S) / '+d.perpTo,'—','');
+    row('Sostituzione',
+      'h = (2 &middot; '+ff(S,4)+') / '+ff(d.baseLenC),
+      ff(d.h,4),'m');
+
+    sep('Passo '+(stepBase2+1)+' — Calcolo aliquote (aree parziali)');
+    row('Somma quote','m + n + p = '+d.quotes.join(' + '),String(tQ),'');
+    d.quotes.forEach(function(q,i){
+      row('S'+(i+1)+' (quota '+q+')',
+        'S &middot; '+q+' / '+tQ+' = '+ff(S,4)+' &middot; '+q+' / '+tQ,
+        ff(d.areas[i],4),'m&sup2;');
+    });
+
+    sep('Passo '+(stepBase2+2)+' — Piedi e intersezioni delle dividendi');
+    row('Principio','Le dividendi sono &perp; a '+d.perpTo+'. Area cumulata = f(x&sup2;) &rarr; inversa con &radic;','—','');
+    var ptLabC=[['G','H'],['E','F']];
+    d.dividers.forEach(function(dv,i){
+      var isL=dv.side==='L1';
+      var fromV=i===0?d.vB1:d.vB2;
+      var ptF=ptLabC[i]?ptLabC[i][0]:'?';
+      var ptS=ptLabC[i]?ptLabC[i][1]:'?';
+      var ca=d.cumAreas[i];
+      var footDist=isL?dv.fx:(d.baseLenC-dv.fx);
+      var altFoot=isL?d.px:(d.baseLenC-d.px);
+      var dSide=isL?dv.dFromVB1_side:dv.dFromVB2_side;
+      var sideN=isL?(d.perpTo==='BC'?'AB':d.perpTo==='AC'?'AB':'AC')
+                   :(d.perpTo==='BC'?'AC':d.perpTo==='AC'?'BC':'BC');
+      // Area cumulata
+      var qLbls=d.quotes.slice(0,i+1).join('+');
+      row('S_cum ('+(i+1)+'&ordf; divid.)',
+        'S &middot; ('+qLbls+') / '+tQ+' = '+ff(S,4)+' &middot; '+(d.quotes.slice(0,i+1).reduce(function(a,b){return a+b;},0))+' / '+tQ,
+        ff(ca,4),'m&sup2;');
+      // Piede
+      if(isL){
+        row(fromV+ptF+' su '+d.perpTo+' (x &le; H)',
+          '&radic;(2 &middot; S_cum &middot; '+fromV+'H / h) = &radic;(2 &middot; '+ff(ca,4)+' &middot; '+ff(altFoot,4)+' / '+ff(d.h,4)+')',
+          ff(footDist,4),'m');
+      } else {
+        row(fromV+ptF+' su '+d.perpTo+' (x &ge; H)',
+          '&radic;(2 &middot; (S&minus;S_cum) &middot; '+fromV+'H / h) = &radic;(2 &middot; '+ff(S-ca,4)+' &middot; '+ff(altFoot,4)+' / '+ff(d.h,4)+')',
+          ff(footDist,4),'m');
+      }
+      // Intersezione lato
+      if(dSide!=null){
+        row(fromV+ptS+' su '+sideN,
+          sideN+' &middot; '+fromV+ptF+' / '+fromV+'H = '+ff(({AB:AB,BC:BC,AC:AC}[sideN]||0),4)+' &middot; '+ff(footDist,4)+' / '+ff(altFoot,4),
+          ff(dSide,4),'m');
+      }
+    });
+  }
+
+  var header='<tr style="background:#f0a500;">'
+    +'<th style="padding:5px 8px;border:1px solid #ddd;text-align:center;width:28px;">#</th>'
+    +'<th style="padding:5px 8px;border:1px solid #ddd;width:160px;">Passaggio</th>'
+    +'<th style="padding:5px 8px;border:1px solid #ddd;">Formula / Calcolo</th>'
+    +'<th style="padding:5px 8px;border:1px solid #ddd;width:120px;">Risultato</th></tr>';
+  return '<table style="width:100%;border-collapse:collapse;font-size:11px;">'+header+rows.join('')+'</table>';
+}
+
 // ─── PDF (print-only, no popup, no file download) ────────────
 function generatePDF(){
   var name=(document.getElementById('st_name')||{value:''}).value.trim()||'Non indicato';
@@ -3408,7 +3640,12 @@ function generatePDF(){
         +'<b>S</b>='+ff(d.S)+' m&#178; &emsp;'
         +d.areas.map(function(a,i){return ['S&#x2081;','S&#x2082;','S&#x2083;'][i]+'='+ff(a)+' m&#178;';}).join(' &emsp; ')+'<br>'
         +'<b>Distanze:</b> '
-        +d.baseDists.map(function(b,i){return ['P&#x2081;D','DE','EB'][i]+'='+ff(b)+' m';}).slice(0,d.nP).join(' &emsp; ');
+        +(function(){
+          var p1i=d._p1||(d.vx==='A'?'B':d.vx==='B'?'A':'A');
+          var p2i=d._p2||(d.vx==='A'?'C':d.vx==='B'?'C':'B');
+          var sN=[p1i+'E','EF','F'+p2i];
+          return d.baseDists.map(function(b,i){return sN[i]+'='+ff(b)+' m';}).slice(0,d.nP).join(' &emsp; ');
+        })();
   } else {
     info='<b>AB</b>='+ff(d.AB)+' m &emsp; <b>AC</b>='+ff(d.AC)+' m &emsp; <b>&alpha;</b>='+ff(d.ad,4)+'&deg;<br>'
         +'<b>Quote:</b> '+d.quotes.join(' : ')+'<br><b>S</b>='+ff(d.S)+' m&#178;';
@@ -3418,18 +3655,26 @@ function generatePDF(){
   var img='';
   try{var mc=document.getElementById('mc');img='<img src="'+mc.toDataURL('image/png')+'" style="max-width:100%;border:1px solid #ccc;">';}catch(e){}
 
-  // Steps table
-  var rows=steps.map(function(s,i){
-    var r=perf.retryMap[i]||0;
-    var q=(s.q||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
-    if(q.length>100)q=q.substring(0,100)+'...';
-    var esito=r===0?'<span style="color:#2a8a2a;">\u2713 Corretto</span>':'<span style="color:#c07000;">\u2713 ('+r+' err.)</span>';
-    return '<tr style="background:'+(i%2?'#f8f8f8':'#fff')+'">'
-      +'<td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">'+(i+1)+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #ddd;">'+q+'</td>'
-      +'<td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">'+esito+'</td>'
-      +'</tr>';
-  }).join('');
+  // Steps table — either auto-solve steps or interactive steps
+  var stepsSection='';
+  if(autoSolveActive){
+    stepsSection='<h2>Svolgimento Completo (Soluzione Automatica)<\/h2>'
+      +buildAutoSolveSteps(d);
+  } else {
+    var rows=steps.map(function(s,i){
+      var r=perf.retryMap[i]||0;
+      var q=(s.q||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+      if(q.length>100)q=q.substring(0,100)+'...';
+      var esito=r===0?'<span style="color:#2a8a2a;">\u2713 Corretto</span>':'<span style="color:#c07000;">\u2713 ('+r+' err.)</span>';
+      return '<tr style="background:'+(i%2?'#f8f8f8':'#fff')+'">'
+        +'<td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">'+(i+1)+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #ddd;">'+q+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #ddd;text-align:center;">'+esito+'</td>'
+        +'</tr>';
+    }).join('');
+    stepsSection='<h2>Step svolti<\/h2>'
+      +'<table><tr><th>#<\/th><th>Domanda<\/th><th>Esito<\/th><\/tr>'+rows+'<\/table>';
+  }
 
   // Grade HTML
   var gradeHTML='';
@@ -3487,22 +3732,23 @@ function generatePDF(){
     +'table{width:100%;border-collapse:collapse;font-size:11px;}'
     +'th{background:#f0a500;color:#000;padding:5px 8px;text-align:left;}'
     +'<\/style><\/head><body>'
-    +'<h1>Report TopoTrainer v6.0 &mdash; '+date+'<\/h1>'
+    +'<h1>Report TopoTrainer v6.5 &mdash; '+date+'<\/h1>'
     +'<div class="g">'
     +'<div class="b"><div class="l">Studente<\/div><div class="v">'+name+'<\/div><\/div>'
     +'<div class="b"><div class="l">Classe<\/div><div class="v">'+cls+'<\/div><\/div>'
     +'<div class="b"><div class="l">Data<\/div><div class="v">'+date+'<\/div><\/div>'
     +'<div class="b"><div class="l">Esercizio<\/div><div class="v">'+(d.type==='vertex'?'Caso A &mdash; Vertice':d.type==='perp'?'Caso C &mdash; Perpendicolari':'Caso B &mdash; Parallele')+'<\/div><\/div>'
     +'<\/div>'
-    +'<p style="font-size:11px;color:#555;margin-bottom:14px;">Docenti: <b>Prof. Losenno<\/b> &amp; <b>Prof. D\'Aranno<\/b><\/p>'
-    +gradeHTML
+    +'<p style="font-size:11px;color:#555;margin-bottom:14px;">Docenti: <b>Prof. Losenno<\/b> &amp; <b>Prof. D\'Aranno<\/b>'
+    +(autoSolveActive?' &emsp; <span style="background:#f0a500;color:#000;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;">&#9997; Soluzione Automatica<\/span>':'')
+    +'<\/p>'
+    +(autoSolveActive?'':gradeHTML)
     +'<h2>Dati e Risultati<\/h2><p style="line-height:2;">'+info+'<\/p>'
     +'<h2>Triangolo<\/h2>'+img
-    +'<h2>Step svolti<\/h2>'
-    +'<table><tr><th>#<\/th><th>Domanda<\/th><th>Esito<\/th><\/tr>'+rows+'<\/table>'
+    +stepsSection
     +'<button class="printbtn" onclick="window.print()" style="margin-top:14px;padding:10px 20px;background:#f0a500;border:none;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">Stampa \/ Salva PDF<\/button>'
     +'<p style="margin-top:16px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:6px;">'
-    +'TopoTrainer v6.0 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
+    +'TopoTrainer v6.5 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
     +'<\/body><\/html>';
 
   // Open print dialog directly in a new window — no file download
