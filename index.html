@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TopoTrainer v5.2 — Divisioni Particelle Triangolari</title>
+<title>TopoTrainer v5.4 — Divisioni Particelle Triangolari</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -143,7 +143,7 @@ header{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 20p
 
 <header>
   <div class="logo">Topo<span>Trainer</span></div>
-  <div class="badge" style="font-size:0.6rem;">v5.2</div>
+  <div class="badge" style="font-size:0.6rem;">v5.4</div>
   <div class="badge">ITT Agraria · 3° Anno · Genio Rurale</div>
   <div class="badge" style="color:var(--acc);border-color:var(--acc);font-size:0.6rem;">Prof. Losenno &amp; Prof. D'Aranno</div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -625,21 +625,22 @@ function updateCVxSelectors(){
 // ─── EXAMPLES ───────────────────────────────────
 function loadEx(){
   if(curCase==='vertex'){
-    document.getElementById('v_AB').value=134.30;
-    document.getElementById('v_BC').value=82.50;
-    document.getElementById('v_AC').value=78.00;
-    // Clear angles
-    document.getElementById('v_al_a').value='';
+    document.getElementById('v_AB').value=75.39;
+    document.getElementById('v_BC').value='';
+    document.getElementById('v_AC').value=110.78;
+    document.getElementById('v_al_a').value=83.6852;
     document.getElementById('v_al_b').value='';
     document.getElementById('v_al_c').value='';
+    document.getElementById('v_au').value='grad';
     setVx('A');
-    document.getElementById('v_nP').value='2';
+    document.getElementById('v_nP').value='3';
     var minS=document.getElementById('v_minVx'); if(minS)minS.value='none';
     var maxS=document.getElementById('v_maxVx'); if(maxS)maxS.value='none';
     mkVQ();
     setTimeout(function(){
       document.getElementById('v_q0').value=2;
-      document.getElementById('v_q1').value=1;
+      document.getElementById('v_q1').value=3;
+      document.getElementById('v_q2').value=5;
     },20);
   } else if(curCase==='perp'){
     document.getElementById('c_BC').value='';
@@ -2338,11 +2339,12 @@ function buildV(d){
 
   st.push({type:'numeric',val:areas[0],unit:'m²',
     unlock:{lbl:'S₁='+ff(areas[0])+' m²', val:areas[0]},
-    q:'Quote '+quotes.join(' : ')+'. Calcola S₁ (prima quota area):<br>'
-      +'S₁ = S · '+quotes[0]+' / ('+quotes.join('+')+') = '+ff(S)+' · '+quotes[0]+' / '+tQ+'<br>'
+    q:'Quote '+quotes.join(' : ')+' — somma totale = <b>'+tQ+'</b>.<br>'
+      +'Calcola <b>S₁</b> (la prima aliquota, quota <b>'+quotes[0]+'</b>):<br>'
+      +'<b>S₁ = S · m / (m+n'+( nP>2?'+p':'')+') </b><br>'
       +'Inserisci S₁ in m²:',
     ok:'✓ S₁ calcolata correttamente.',
-    err:'✗ Non è corretto. Ricorda: S₁ = S_totale × quota₁ / somma_quote. Ricontrolla i valori.',
+    err:'✗ Non è corretto. Formula: S₁ = S × quota₁ / somma_di_tutte_le_quote. Stai usando la somma giusta al denominatore?',
   });
 
   st.push({type:'choice',
@@ -2366,53 +2368,49 @@ function buildV(d){
     unlock:{lbl:seg1+'='+ff(baseDists[0])+' m', val:baseDists[0]},
     drawAfter:1,
     q:'Calcola la distanza <b>'+seg1+'</b> (primo segmento su '+baseName+'):<br>'
-      +'<b>'+seg1+' = '+baseName+' \xb7 S\u2081 / S</b><br>'
-      +'Sostituisci i valori e inserisci '+seg1+' in m:',
+      +'<b>'+seg1+' = '+baseName+' · S₁ / S</b><br>'
+      +'Inserisci '+seg1+' in m:',
     ok:'✓ '+seg1+' calcolato correttamente.',
     err:'✗ Riprova. La formula è: '+seg1+' = '+baseName+' × S₁ / S. Controlla di aver usato S₁ e S corretti.',
   });
 
   if(nP>=2){
-    // S₂ aliquota
     st.push({type:'numeric',val:areas[1],unit:'m²',
       unlock:{lbl:'S₂='+ff(areas[1])+' m²', val:areas[1]},
-      q:'Ottimo! Ora calcola <b>S₂</b> (seconda quota area):<br>'
-        +'<b>S₂ = S · '+quotes[1]+' / ('+quotes.join('+')+') = '+ff(S)+' · '+quotes[1]+' / '+tQ+'</b><br>'
+      q:'Calcola <b>S₂</b> (seconda aliquota, quota <b>'+quotes[1]+'</b>):<br>'
+        +'<b>S₂ = S · n / (m+n'+(nP>2?'+p':'')+') </b><br>'
         +'Inserisci S₂ in m²:',
       ok:'✓ S₂ calcolata correttamente.',
-      err:'✗ Riprova. Formula: S₂ = S × quota₂ / somma_quote.',
+      err:'✗ Non è corretto. Formula: S₂ = S × quota₂ / somma_di_tutte_le_quote.',
     });
-    // DE distanza
     st.push({type:'numeric',val:baseDists[1],unit:'m',
       unlock:{lbl:'DE='+ff(baseDists[1])+' m', val:baseDists[1]},
-      drawAfter:2,  // draw with two dividers
-      q:'Calcola la distanza DE (secondo segmento su '+baseName+'):<br>'
-        +'<b>DE = '+baseName+' · S₂ / S = '+ff(baseLen)+' · '+ff(areas[1])+' / '+ff(S)+'</b><br>'
+      drawAfter:2,
+      q:'Calcola la distanza <b>DE</b> (secondo segmento su '+baseName+'):<br>'
+        +'<b>DE = '+baseName+' · S₂ / S</b><br>'
         +'Inserisci DE in m:',
       ok:'✓ DE calcolato correttamente.',
-      err:'✗ Riprova. Formula: DE = '+baseName+' × S₂ / S.',
+      err:'✗ Non è corretto. Formula: DE = '+baseName+' × S₂ / S.',
     });
   }
 
   if(nP>=3){
-    // S₃ aliquota
     st.push({type:'numeric',val:areas[2],unit:'m²',
       unlock:{lbl:'S₃='+ff(areas[2])+' m²', val:areas[2]},
-      q:'Calcola <b>S₃</b> (terza quota area):<br>'
-        +'<b>S₃ = S · '+quotes[2]+' / ('+quotes.join('+')+') = '+ff(S)+' · '+quotes[2]+' / '+tQ+'</b><br>'
+      q:'Calcola <b>S₃</b> (terza aliquota, quota <b>'+quotes[2]+'</b>):<br>'
+        +'<b>S₃ = S · p / (m+n+p) </b><br>'
         +'Inserisci S₃ in m²:',
       ok:'✓ S₃ calcolata correttamente.',
-      err:'✗ Riprova. Formula: S₃ = S × quota₃ / somma_quote.',
+      err:'✗ Non è corretto. Formula: S₃ = S × quota₃ / somma_di_tutte_le_quote.',
     });
-    // EF distanza
     st.push({type:'numeric',val:baseDists[2],unit:'m',
       unlock:{lbl:'EF='+ff(baseDists[2])+' m', val:baseDists[2]},
       drawAfter:3,
-      q:'Calcola la distanza EF (terzo segmento su '+baseName+'):<br>'
-        +'<b>EF = '+baseName+' · S₃ / S = '+ff(baseLen)+' · '+ff(areas[2])+' / '+ff(S)+'</b><br>'
+      q:'Calcola la distanza <b>EF</b> (terzo segmento su '+baseName+'):<br>'
+        +'<b>EF = '+baseName+' · S₃ / S</b><br>'
         +'Inserisci EF in m:',
       ok:'✓ EF calcolato correttamente.',
-      err:'✗ Riprova. Formula: EF = '+baseName+' × S₃ / S.',
+      err:'✗ Non è corretto. Formula: EF = '+baseName+' × S₃ / S.',
     });
   }
 
@@ -3256,7 +3254,7 @@ function generatePDF(){
     +'table{width:100%;border-collapse:collapse;font-size:11px;}'
     +'th{background:#f0a500;color:#000;padding:5px 8px;text-align:left;}'
     +'<\/style><\/head><body>'
-    +'<h1>Report TopoTrainer v5.2 &mdash; '+date+'<\/h1>'
+    +'<h1>Report TopoTrainer v5.4 &mdash; '+date+'<\/h1>'
     +'<div class="g">'
     +'<div class="b"><div class="l">Studente<\/div><div class="v">'+name+'<\/div><\/div>'
     +'<div class="b"><div class="l">Classe<\/div><div class="v">'+cls+'<\/div><\/div>'
@@ -3271,7 +3269,7 @@ function generatePDF(){
     +'<table><tr><th>#<\/th><th>Domanda<\/th><th>Esito<\/th><\/tr>'+rows+'<\/table>'
     +'<button class="printbtn" onclick="window.print()" style="margin-top:14px;padding:10px 20px;background:#f0a500;border:none;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">Stampa \/ Salva PDF<\/button>'
     +'<p style="margin-top:16px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:6px;">'
-    +'TopoTrainer v5.2 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
+    +'TopoTrainer v5.4 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
     +'<\/body><\/html>';
 
   // Open print dialog directly in a new window — no file download
