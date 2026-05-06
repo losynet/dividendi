@@ -3106,7 +3106,7 @@ function injectSSteps(afterEl,greek,a0,a1,opL,S_){
             fb4.innerHTML='✓ S='+ff(S_)+' m². Eccellente!';
             inp.disabled=true; vb.disabled=true;
             unlockDataValue('S='+ff(S_)+' m²',S_);
-            showNextBtn(fb4);
+            setTimeout(function(){stepIdx++;if(stepIdx>=steps.length)finalize();else renderSteps();},1400);
           } else {
             fb4.className='fb bad';
             fb4.innerHTML='✗ Non è corretto. Controlla l\'unità angolare e riapplica S = ½·'+a0+'·'+a1+'·sin('+greek+').';
