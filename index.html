@@ -2820,7 +2820,6 @@ function renderSteps(){
         div.appendChild(hint);
         div.appendChild(fb);
       } else if(s.type==='angleChoice'||s.type==='pathChoice'){
-        // Both choices: all options valid — student picks preference
         var odFree=document.createElement('div'); odFree.className='opts';
         (function(step,si){
           step.opts.forEach(function(o){
@@ -2833,6 +2832,10 @@ function renderSteps(){
               fbFree.className='fb ok'; fbFree.innerHTML=step.ok;
               if(o.vx) chosenAngleVertex=o.vx;
               if(o.path){ chosenCalcPath=o.path; perf.pathChosen=o.path; }
+              // Once BOTH angleChoice and pathChoice are resolved, inject concrete steps
+              if(chosenAngleVertex&&chosenCalcPath){
+                injectAngleSteps(steps, stepIdx);
+              }
               showNextBtn(fbFree);
             };
             odFree.appendChild(btn);
@@ -2841,181 +2844,8 @@ function renderSteps(){
         div.appendChild(odFree);
         var fbFree=document.createElement('div'); fbFree.className='fb'; div.appendChild(fbFree);
       } else if(s.type==='angleFormula'){
-        // V = vertex chosen by student in angleChoice step (or default 'A')
-        // NEVER use s.vP1 as fallback — it is the base vertex, not the angle vertex
-        var V=chosenAngleVertex||'A';
-        var vd=s.vtxData&&s.vtxData[V]?s.vtxData[V]:{
-          g:{'A':'α','B':'β','C':'γ'}[V]||'α',
-          ad0:{'A':'AB','B':'AB','C':'AC'}[V],
-          ad1:{'A':'AC','B':'BC','C':'BC'}[V],
-          op:{'A':'BC','B':'AC','C':'AB'}[V],
-          cosV:s.cosP1,
-          angD:s.angP1d,
-          angG:(s.angP1d*200/180)
-        };
-        var gk=vd.g,a0=vd.ad0,a1=vd.ad1,opL=vd.op;
-        var cosVx=vd.cosV,angDx=vd.angD,angGx=vd.angG;
-        var S2=s.S;
-        var path=chosenCalcPath||'cos_acos';
-        var unit=getAngleUnit();
-
-        if(path==='cos_acos'){
-          div.innerHTML+='<div class="stepq">Angolo <b>'+gk+'</b> al vertice <b>'+V+'</b> (tra <b>'+a0+'</b> e <b>'+a1+'</b>).<br><br>'
-            +'Quale formula usi per <b>cos('+gk+')</b>?</div>';
-          var od4=document.createElement('div'); od4.className='opts';
-          var opts4=[];
-          if(s.vtxData){
-            ['A','B','C'].forEach(function(vv){
-              var vd2=s.vtxData[vv];
-              opts4.push({t:'cos('+vd2.g+') = ('+vd2.ad0+'²+'+vd2.ad1+'²−'+vd2.op+'²) / (2·'+vd2.ad0+'·'+vd2.ad1+')',
-                correct:(vv===V),g:vd2.g,a0:vd2.ad0,a1:vd2.ad1,op:vd2.op,
-                cosV:vd2.cosV,angD:vd2.angD,angG:vd2.angG});
-            });
-          }
-          // Wrong formula: missing squares
-          opts4.push({t:'cos('+gk+') = ('+a0+'+'+a1+'−'+opL+') / (2·'+a0+'·'+a1+')  ← senza i quadrati',
-            correct:false,g:gk,a0:a0,a1:a1,op:opL,cosV:cosVx,angD:angDx,angG:angGx});
-          opts4.sort(function(){return Math.random()-0.5;});
-          var fb4=document.createElement('div'); fb4.className='fb';
-          opts4.forEach(function(o){
-            var btn=document.createElement('button'); btn.type='button'; btn.className='opt'; btn.innerHTML=o.t;
-            (function(b,oo){
-              b.onclick=function(){
-                fb4.style.display='block';
-                if(oo.correct){
-                  od4.querySelectorAll('.opt').forEach(function(x){x.disabled=true;}); b.classList.add('ok');
-                  fb4.className='fb ok';
-                  fb4.innerHTML='✓ Corretto! Calcola ora il valore numerico di cos('+oo.g+'):';
-                  // cos numeric
-                  var nr=document.createElement('div'); nr.className='nrow';
-                  var inp2=document.createElement('input'); inp2.type='text'; inp2.className='ninp';
-                  inp2.placeholder='cos('+oo.g+') = ?';
-                  var pb2=document.createElement('button'); pb2.type='button'; pb2.className='nbtn'; pb2.textContent='\u2190 Calc';
-                  (function(input){pb2.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp2);
-                  var vb2=document.createElement('button'); vb2.type='button'; vb2.className='vbtn'; vb2.textContent='Verifica ✓';
-                  var fb5=document.createElement('div'); fb5.className='fb';
-                  inp2.addEventListener('keydown',function(e){if(e.key==='Enter')vb2.click();});
-                  vb2.onclick=function(){
-                    var cv=parseFloat(inp2.value.trim().replace(',','.'));
-                    if(isNaN(cv)){
-                      fb5.className='fb bad'; fb5.innerHTML='✗ Inserisci un numero (usa il punto come separatore decimale).';
-                      inp2.select(); return;
-                    }
-                    if(Math.abs(cv)>1.0001){
-                      fb5.className='fb bad'; fb5.innerHTML='✗ Il coseno è sempre compreso tra −1 e +1. Stai forse inserendo l\'angolo invece del coseno? Inserisci prima il valore di cos('+oo.g+').';
-                      inp2.select(); return;
-                    }
-                    if(Math.abs(cv-oo.cosV)<=0.001){
-                      fb5.className='fb ok'; fb5.innerHTML='✓ Corretto! Ora usa <b>acos<\/b> per trovare l\'angolo.';
-                      inp2.disabled=true; vb2.disabled=true;
-                      // angle input
-                      var ar=document.createElement('div'); ar.className='nrow';
-                      var aI=document.createElement('input'); aI.type='text'; aI.className='ninp';
-                      var uLbl=unit==='gon'?'gon':'°';
-                      aI.placeholder=oo.g+' in '+uLbl+'...';
-                      var paI=document.createElement('button'); paI.type='button'; paI.className='nbtn'; paI.textContent='\u2190 Calc';
-                      (function(input){paI.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aI);
-                      var aVb=document.createElement('button'); aVb.type='button'; aVb.className='vbtn'; aVb.textContent='Verifica ✓';
-                      var afb=document.createElement('div'); afb.className='fb';
-                      aVb.onclick=function(){
-                        var av=parseFloat(aI.value.trim().replace(',','.'));
-                        if(isNaN(av)){
-                          afb.className='fb bad'; afb.innerHTML='✗ Inserisci un numero.';
-                          aI.select(); return;
-                        }
-                        if(Math.abs(av)<=1.0){
-                          afb.className='fb bad'; afb.innerHTML='✗ Stai inserendo il coseno, non l\'angolo. Applica acos al valore trovato e inserisci l\'angolo in gradi (°) o gon.';
-                          aI.select(); return;
-                        }
-                        var okD=Math.abs(av-oo.angD)<=0.1, okG=Math.abs(av-oo.angG)<=0.12;
-                        if(okD||okG){
-                          afb.className='fb ok';
-                          afb.innerHTML='✓ '+oo.g+'='+oo.angD+'°='+oo.angG+' gon. Ora calcola S.';
-                          aI.disabled=true; aVb.disabled=true;
-                          drawnAngle={vertex:V,greek:oo.g}; drawScene();
-                          unlockDataValue(oo.g+'='+oo.angD+'°',oo.angD);
-                          injectSSteps(afb,oo.g,oo.a0,oo.a1,oo.op,S2);
-                        } else {
-                          afb.className='fb bad';
-                          afb.innerHTML='✗ Non è corretto. Hai inserito <b>'+av+'</b>. Atteso: <b>'+ff(oo.angD,4)+'°</b> = <b>'+ff(oo.angG,4)+' gon</b>. Controlla l\'unità angolare e riapplica acos.';
-                          aI.select(); perf.procErrors++;
-                        }
-                      };
-                      aI.addEventListener('keydown',function(e){if(e.key==='Enter')aVb.click();});
-                      var ab=document.createElement('div'); ab.className='nrow-btns';
-                      ab.appendChild(paI); ab.appendChild(aVb);
-                      ar.appendChild(aI); ar.appendChild(ab);
-                      var hintAI=document.createElement('div'); hintAI.className='nhint';
-                      hintAI.textContent='Usa acos nella calcolatrice (modalit\u00e0 GRAD per gon), poi "\u2190 Calc".';
-                      fb5.parentNode.insertBefore(ar,fb5.nextSibling);
-                      fb5.parentNode.insertBefore(hintAI,ar.nextSibling);
-                      fb5.parentNode.insertBefore(afb,hintAI.nextSibling);
-                    } else {
-                      fb5.className='fb bad'; fb5.innerHTML='✗ Non è corretto (atteso: ~'+oo.cosV+'). Riapplica: cos('+oo.g+') = ('+oo.a0+'²+'+oo.a1+'²−'+oo.op+'²) / (2·'+oo.a0+'·'+oo.a1+').';
-                      inp2.select(); perf.procErrors++;
-                    }
-                  };
-                  var nb=document.createElement('div'); nb.className='nrow-btns';
-                  nb.appendChild(pb2); nb.appendChild(vb2);
-                  nr.appendChild(inp2); nr.appendChild(nb);
-                  var hint2=document.createElement('div'); hint2.className='nhint';
-                  hint2.textContent='Usa la calcolatrice, poi "\u2190 Calc" per incollare.';
-                  fb4.parentNode.insertBefore(nr,fb4.nextSibling);
-                  fb4.parentNode.insertBefore(hint2,fb4.nextSibling.nextSibling);
-                  fb4.parentNode.insertBefore(fb5,hint2.nextSibling);
-                } else {
-                  od4.querySelectorAll('.opt').forEach(function(x){x.disabled=false;x.classList.remove('bad');});
-                  b.disabled=true; b.classList.add('bad');
-                  fb4.className='fb bad'; fb4.innerHTML='✗ Formula errata. Usa i due lati adiacenti e il lato opposto.';
-                  perf.procErrors++;
-                }
-              };
-            })(btn,o);
-            od4.appendChild(btn);
-          });
-          div.appendChild(od4); div.appendChild(fb4);
-        } else {
-          // Direct acos
-          var unitLbl=unit==='gon'?'gon':'°';
-          div.innerHTML+='<div class="stepq"><b>Percorso diretto</b>: γ = acos[('+a0+'²+'+a1+'²−'+opL+'²)/(2·'+a0+'·'+a1+')]<br>Inserisci '+gk+' in '+unitLbl+':</div>';
-          var aIDr=document.createElement('input'); aIDr.type='text'; aIDr.className='ninp';
-          aIDr.placeholder=gk+' in '+unitLbl+'...';
-          var paIDr=document.createElement('button'); paIDr.type='button'; paIDr.className='nbtn'; paIDr.textContent='\u2190 Calc';
-          (function(input){paIDr.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aIDr);
-          var aVDr=document.createElement('button'); aVDr.type='button'; aVDr.className='vbtn'; aVDr.textContent='Verifica ✓';
-          var afDr=document.createElement('div'); afDr.className='fb';
-          aVDr.onclick=function(){
-            var av=parseFloat(aIDr.value.trim().replace(',','.'));
-            if(isNaN(av)){
-              afDr.className='fb bad'; afDr.innerHTML='✗ Inserisci un numero.';
-              aIDr.select(); return;
-            }
-            if(Math.abs(av)<=1.0){
-              afDr.className='fb bad'; afDr.innerHTML='✗ Stai inserendo il coseno, non l\'angolo. Applica acos al valore e inserisci l\'angolo in ° o gon.';
-              aIDr.select(); return;
-            }
-            var okD=Math.abs(av-angDx)<=0.1, okG=Math.abs(av-angGx)<=0.12;
-            if(okD||okG){
-              afDr.className='fb ok'; afDr.innerHTML='✓ '+gk+'='+angDx+'°='+angGx+' gon. Ora calcola S.';
-              aIDr.disabled=true; aVDr.disabled=true;
-              drawnAngle={vertex:V,greek:gk}; drawScene();
-              unlockDataValue(gk+'='+angDx+'°',angDx);
-              injectSSteps(afDr,gk,a0,a1,opL,S2);
-            } else {
-              afDr.className='fb bad';
-              afDr.innerHTML='✗ Non è corretto. Hai inserito <b>'+av+'</b>. Atteso: <b>'+ff(angDx,4)+'°</b> = <b>'+ff(angGx,4)+' gon</b>. Controlla l\'unità angolare.';
-              aIDr.select(); perf.procErrors++;
-            }
-          };
-          aIDr.addEventListener('keydown',function(e){if(e.key==='Enter')aVDr.click();});
-          var arDr=document.createElement('div'); arDr.className='nrow';
-          var abDr=document.createElement('div'); abDr.className='nrow-btns';
-          abDr.appendChild(paIDr); abDr.appendChild(aVDr);
-          arDr.appendChild(aIDr); arDr.appendChild(abDr);
-          var hintDr=document.createElement('div'); hintDr.className='nhint';
-          hintDr.textContent='Usa acos nella calcolatrice (GRAD per gon), poi "\u2190 Calc" per incollare.';
-          div.appendChild(arDr); div.appendChild(hintDr); div.appendChild(afDr);
-        }
+        // Replaced by injectAngleSteps — nothing to render here
+        div.style.display='none';
       } else {
         var od=document.createElement('div'); od.className='opts';
         (function(step,idx){
@@ -3062,76 +2892,106 @@ function showNextBtn(afterEl){
   setTimeout(function(){btn.scrollIntoView({behavior:'smooth',block:'nearest'});},80);
 }
 
-// Inject S formula choice + numeric step dynamically after angle found
-function injectSSteps(afterEl,greek,a0,a1,opL,S_){
-  var con=afterEl.parentNode; if(!con)return;
-  var qdiv=document.createElement('div'); qdiv.className='stepq';
-  qdiv.style.marginTop='10px';
-  var _angLbl=angDisplay||greek;
-  qdiv.innerHTML='Conosci i lati <b>'+a0+'</b> e <b>'+a1+'</b> e l\'angolo <b>'+greek+'</b> = '+_angLbl+'.<br><b>Quale formula usi per S?</b>';
-  con.appendChild(qdiv);
-  var od=document.createElement('div'); od.className='opts';
-  var fopts=[
-    {t:'S = ½ · '+a0+' · '+a1+' · sin('+_angLbl+')', c:true},
-    {t:'S = ½ · '+a0+' · '+a1+' · cos('+_angLbl+')', c:false},
-    {t:'S = '+a0+' · '+a1+' · sin('+greek+')',            c:false},
-    {t:'S = ½ · '+opL+' · '+a0+' · sin('+greek+')',c:false},
-  ];
-  fopts.sort(function(){return Math.random()-0.5;});
-  var fbS=document.createElement('div'); fbS.className='fb';
-  fopts.forEach(function(o){
-    var btn=document.createElement('button'); btn.type='button'; btn.className='opt';
-    btn.innerHTML=o.t;
-    btn.onclick=function(){
-      od.querySelectorAll('.opt').forEach(function(b){b.disabled=true;});
-      if(o.c){btn.classList.add('ok');}else{btn.classList.add('bad');}
-      fbS.style.display='block';
-      if(o.c){
-        fbS.className='fb ok';
-        fbS.innerHTML='✓ Corretto! ½, i due lati adiacenti, il SENO. Calcola S:';
-        var nrow=document.createElement('div'); nrow.className='nrow';
-        var inp=document.createElement('input'); inp.type='text'; inp.className='ninp';
-        inp.placeholder='S in m²...';
-        var pbS=document.createElement('button'); pbS.type='button'; pbS.className='nbtn'; pbS.textContent='\u2190 Calc';
-        (function(input){pbS.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp);
-        var vb=document.createElement('button'); vb.type='button'; vb.className='vbtn';
-        vb.textContent='Verifica ✓';
-        var fb4=document.createElement('div'); fb4.className='fb';
-        var tol4=Math.max(Math.abs(S_)*0.005,0.05);
-        inp.addEventListener('keydown',function(e){if(e.key==='Enter')vb.click();});
-        vb.onclick=function(){
-          var v=parseFloat(inp.value.trim().replace(',','.'));
-          if(Math.abs(v-S_)<=tol4){
-            fb4.className='fb ok';
-            fb4.innerHTML='✓ S='+ff(S_)+' m². Eccellente!';
-            inp.disabled=true; vb.disabled=true;
-            unlockDataValue('S='+ff(S_)+' m²',S_);
-            setTimeout(function(){stepIdx++;if(stepIdx>=steps.length)finalize();else renderSteps();},1400);
-          } else {
-            fb4.className='fb bad';
-            fb4.innerHTML='✗ Non è corretto. Controlla l\'unità angolare e riapplica S = ½·'+a0+'·'+a1+'·sin('+greek+').';
-            inp.select();
-            perf.retryMap[stepIdx]=(perf.retryMap[stepIdx]||0)+1;
-            var pct=Math.abs(v-S_)/Math.max(S_,0.001);
-            if(pct>0.5)perf.dataErrors++;else perf.procErrors++;
-          }
-        };
-        var btns=document.createElement('div'); btns.className='nrow-btns';
-        btns.appendChild(pbS); btns.appendChild(vb);
-        nrow.appendChild(inp); nrow.appendChild(btns);
-        con.appendChild(nrow); con.appendChild(fb4);
-      } else {
-        fbS.className='fb bad';
-        fbS.innerHTML='✗ S=½·'+a0+'·'+a1+'·sin('+greek+'). Usa SENO, non cos, e fattore ½.';
-        od.querySelectorAll('.opt').forEach(function(b){b.disabled=false;b.classList.remove('bad');});
-        btn.disabled=true;
-        perf.procErrors++;
-      }
-    };
-    od.appendChild(btn);
+// ─── Inject angle+S steps into steps[] after angleChoice/pathChoice ──────────
+function injectAngleSteps(stepsArr, afterIdx){
+  // Find the angleFormula step
+  var afIdx=-1;
+  for(var i=afterIdx;i<stepsArr.length;i++){
+    if(stepsArr[i].type==='angleFormula'){afIdx=i;break;}
+  }
+  if(afIdx<0)return;
+  var s=stepsArr[afIdx];
+  var V=chosenAngleVertex||'A';
+  var path=chosenCalcPath||'direct_acos';
+  var vd=s.vtxData&&s.vtxData[V]?s.vtxData[V]:{
+    g:{'A':'\u03b1','B':'\u03b2','C':'\u03b3'}[V]||'\u03b1',
+    ad0:{'A':'AB','B':'AB','C':'AC'}[V],
+    ad1:{'A':'AC','B':'BC','C':'BC'}[V],
+    op:{'A':'BC','B':'AC','C':'AB'}[V],
+    cosV:(s.vtxData&&s.vtxData[V]?s.vtxData[V].cosV:s.cosP1)||0,
+    angD:(s.vtxData&&s.vtxData[V]?s.vtxData[V].angD:s.angP1d)||0,
+    angG:(s.vtxData&&s.vtxData[V]?s.vtxData[V].angG:(s.angP1d*200/180))||0
+  };
+  var gk=vd.g, a0=vd.ad0, a1=vd.ad1, opL=vd.op;
+  var cosV=vd.cosV, angD=vd.angD, angG=vd.angG;
+  var S_=s.S;
+  var newSteps=[];
+
+  if(path==='cos_acos'){
+    // Step: choose correct cos formula
+    var wrongOpts=[];
+    if(s.vtxData){
+      ['A','B','C'].forEach(function(vv){
+        if(vv===V)return;
+        var vd2=s.vtxData[vv];
+        wrongOpts.push({t:'cos('+vd2.g+') = ('+vd2.ad0+'\u00b2+'+vd2.ad1+'\u00b2\u2212'+vd2.op+'\u00b2) / (2\u00b7'+vd2.ad0+'\u00b7'+vd2.ad1+')',c:false});
+      });
+    }
+    wrongOpts.push({t:'cos('+gk+') = ('+a0+'+'+a1+'\u2212'+opL+') / (2\u00b7'+a0+'\u00b7'+a1+')  \u2190 senza i quadrati',c:false});
+    newSteps.push({type:'choice',
+      q:'Angolo <b>'+gk+'</b> al vertice <b>'+V+'</b> (tra <b>'+a0+'</b> e <b>'+a1+'</b>).<br>Quale formula usi per <b>cos('+gk+')</b>?',
+      opts:shuffle([{t:'cos('+gk+') = ('+a0+'\u00b2+'+a1+'\u00b2\u2212'+opL+'\u00b2) / (2\u00b7'+a0+'\u00b7'+a1+')',c:true}].concat(wrongOpts)),
+      ok:'\u2713 Corretto! Calcola ora il valore numerico di cos('+gk+').',
+      err:'\u2717 Usa i due lati adiacenti all\u2019angolo e il lato opposto, con i quadrati al numeratore.',
+    });
+    // Step: cos numeric
+    newSteps.push({type:'numeric',val:cosV,unit:'',
+      q:'Calcola <b>cos('+gk+') = ('+a0+'\u00b2 + '+a1+'\u00b2 \u2212 '+opL+'\u00b2) / (2\u00b7'+a0+'\u00b7'+a1+')</b><br>Inserisci il valore di cos('+gk+'):',
+      ok:'\u2713 cos('+gk+') corretto. Ora applica acos.',
+      err:'\u2717 Non \u00e8 corretto. Riapplica la formula con i valori numerici dei lati.',
+      tol:0.001,
+      unlock:{lbl:'cos('+gk+')='+ff(cosV,6),val:cosV}
+    });
+  }
+
+  // Step: angle numeric (both paths)
+  var uHint=getAngleUnit()==='gon'?'gon':'gradi (\u00b0)';
+  newSteps.push({type:'numeric',
+    val:angD, val_gon:angG,
+    unit: getAngleUnit()==='gon'?'gon':'\u00b0',
+    tol_deg:0.1, tol_gon:0.12,
+    q:(path==='direct_acos'
+      ?'Percorso diretto: <b>'+gk+' = acos[('+a0+'\u00b2+'+a1+'\u00b2\u2212'+opL+'\u00b2)/(2\u00b7'+a0+'\u00b7'+a1+')]</b><br>'
+      :'Applica acos al valore di cos('+gk+') trovato:<br><b>'+gk+' = acos(cos('+gk+'))</b><br>')
+      +'<b style="color:var(--acc)">\u26a0 Calcolatrice in modalit\u00e0 GRAD per ottenere gon</b><br>'
+      +'Inserisci '+gk+' in '+uHint+':',
+    ok:'\u2713 '+gk+' = '+ff(angD,4)+'\u00b0 = '+ff(angG,4)+' gon.',
+    err:'\u2717 Non \u00e8 corretto. Atteso: '+ff(angD,4)+'\u00b0 = '+ff(angG,4)+' gon. Controlla l\u2019unit\u00e0 angolare.',
+    unlock:{lbl:gk+'='+ff(angG,4)+' gon',val:angG},
+    drawAngle:{vertex:V,greek:gk},
+    isAngleDeg:angD, isAngleGon:angG
   });
-  con.appendChild(od); con.appendChild(fbS);
+
+  // Step: S formula choice
+  newSteps.push({type:'choice',
+    q:'Conosci i lati <b>'+a0+'</b> e <b>'+a1+'</b> e l\u2019angolo <b>'+gk+'</b>.<br>Quale formula usi per <b>S</b>?',
+    opts:shuffle([
+      {t:'S = \u00bd \u00b7 '+a0+' \u00b7 '+a1+' \u00b7 sin('+gk+')',c:true},
+      {t:'S = \u00bd \u00b7 '+a0+' \u00b7 '+a1+' \u00b7 cos('+gk+')',c:false},
+      {t:'S = '+a0+' \u00b7 '+a1+' \u00b7 sin('+gk+')',c:false},
+      {t:'S = \u00bd \u00b7 '+opL+' \u00b7 '+a0+' \u00b7 sin('+gk+')',c:false},
+    ]),
+    ok:'\u2713 Esatto! S = \u00bd\u00b7'+a0+'\u00b7'+a1+'\u00b7sin('+gk+'). Due lati adiacenti e il SENO.',
+    err:'\u2717 Usa i due lati adiacenti all\u2019angolo, il SENO, e il fattore \u00bd.',
+  });
+
+  // Step: S numeric
+  newSteps.push({type:'numeric',val:S_,unit:'m\u00b2',
+    q:'Calcola <b>S = \u00bd \u00b7 '+a0+' \u00b7 '+a1+' \u00b7 sin('+gk+')</b><br>'
+      +'<b style="color:var(--acc)">\u26a0 Calcolatrice in modalit\u00e0 GRAD se usi gon</b><br>'
+      +'Inserisci S in m\u00b2:',
+    ok:'\u2713 S calcolata correttamente.',
+    err:'\u2717 Non \u00e8 corretto. Controlla l\u2019unit\u00e0 angolare e riapplica S = \u00bd\u00b7'+a0+'\u00b7'+a1+'\u00b7sin('+gk+').',
+    unlock:{lbl:'S='+ff(S_)+' m\u00b2',val:S_}
+  });
+
+  // Replace the angleFormula step with the new steps
+  stepsArr.splice(afIdx,1);
+  for(var j=newSteps.length-1;j>=0;j--) stepsArr.splice(afIdx,0,newSteps[j]);
+  stepIdx=afIdx;
+  renderSteps();
 }
+
 
 function handleChoice(btn,s,od,idx){
   var ok=btn.dataset.c==='true';
@@ -3163,10 +3023,10 @@ function checkNum(inp,s,fb,idx){
     return;
   }
   var ok;
-  if(s.type==='angle'){
+  if(s.type==='angle'||s.val_gon!==undefined){
+    // angle step: accept either degree or gon value
     ok=Math.abs(val-s.val)<=(s.tol_deg||0.1)||Math.abs(val-s.val_gon)<=(s.tol_gon||0.12);
   } else {
-    // Tolerance: 0.5% of value OR 0.05 absolute minimum — whichever is larger
     var tol=s.tol!==undefined?s.tol:Math.max(Math.abs(s.val)*0.005,0.05);
     ok=Math.abs(val-s.val)<=tol;
   }
