@@ -2875,7 +2875,7 @@ function renderSteps(){
                   var nr=document.createElement('div'); nr.className='nrow';
                   var inp2=document.createElement('input'); inp2.type='text'; inp2.className='ninp';
                   inp2.placeholder='cos('+oo.g+') = ?';
-                  var pb2=document.createElement('button'); pb2.type='button'; pb2.className='cb cb-fn cb-sm'; pb2.textContent='\u2190 Calc';
+                  var pb2=document.createElement('button'); pb2.type='button'; pb2.className='nbtn'; pb2.textContent='\u2190 Calc';
                   (function(input){pb2.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp2);
                   var vb2=document.createElement('button'); vb2.type='button'; vb2.className='vbtn'; vb2.textContent='Verifica ✓';
                   var fb5=document.createElement('div'); fb5.className='fb';
@@ -2890,7 +2890,7 @@ function renderSteps(){
                       var aI=document.createElement('input'); aI.type='text'; aI.className='ninp';
                       var uLbl=unit==='gon'?'gon':'°';
                       aI.placeholder=oo.g+' in '+uLbl+'...';
-                      var paI=document.createElement('button'); paI.type='button'; paI.className='cb cb-fn cb-sm'; paI.textContent='\u2190 Calc';
+                      var paI=document.createElement('button'); paI.type='button'; paI.className='nbtn'; paI.textContent='\u2190 Calc';
                       (function(input){paI.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aI);
                       var aVb=document.createElement('button'); aVb.type='button'; aVb.className='vbtn'; aVb.textContent='Verifica ✓';
                       var afb=document.createElement('div'); afb.className='fb';
@@ -2913,8 +2913,11 @@ function renderSteps(){
                       var ab=document.createElement('div'); ab.className='nrow-btns';
                       ab.appendChild(paI); ab.appendChild(aVb);
                       ar.appendChild(aI); ar.appendChild(ab);
+                      var hintAI=document.createElement('div'); hintAI.className='nhint';
+                      hintAI.textContent='Usa acos nella calcolatrice (modalit\u00e0 GRAD per gon), poi "\u2190 Calc".';
                       fb5.parentNode.insertBefore(ar,fb5.nextSibling);
-                      fb5.parentNode.insertBefore(afb,ar.nextSibling);
+                      fb5.parentNode.insertBefore(hintAI,ar.nextSibling);
+                      fb5.parentNode.insertBefore(afb,hintAI.nextSibling);
                     } else {
                       fb5.className='fb bad'; fb5.innerHTML='✗ Non è corretto. Riapplica la formula del coseno con i lati '+oo.a0+', '+oo.a1+' e '+oo.op+'.';
                       inp2.select(); perf.procErrors++;
@@ -2923,8 +2926,11 @@ function renderSteps(){
                   var nb=document.createElement('div'); nb.className='nrow-btns';
                   nb.appendChild(pb2); nb.appendChild(vb2);
                   nr.appendChild(inp2); nr.appendChild(nb);
+                  var hint2=document.createElement('div'); hint2.className='nhint';
+                  hint2.textContent='Usa la calcolatrice, poi "\u2190 Calc" per incollare.';
                   fb4.parentNode.insertBefore(nr,fb4.nextSibling);
-                  fb4.parentNode.insertBefore(fb5,nr.nextSibling);
+                  fb4.parentNode.insertBefore(hint2,fb4.nextSibling.nextSibling);
+                  fb4.parentNode.insertBefore(fb5,hint2.nextSibling);
                 } else {
                   od4.querySelectorAll('.opt').forEach(function(x){x.disabled=false;x.classList.remove('bad');});
                   b.disabled=true; b.classList.add('bad');
@@ -2942,7 +2948,7 @@ function renderSteps(){
           div.innerHTML+='<div class="stepq"><b>Percorso diretto</b>: γ = acos[('+a0+'²+'+a1+'²−'+opL+'²)/(2·'+a0+'·'+a1+')]<br>Inserisci '+gk+' in '+unitLbl+':</div>';
           var aIDr=document.createElement('input'); aIDr.type='text'; aIDr.className='ninp';
           aIDr.placeholder=gk+' in '+unitLbl+'...';
-          var paIDr=document.createElement('button'); paIDr.type='button'; paIDr.className='cb cb-fn cb-sm'; paIDr.textContent='\u2190 Calc';
+          var paIDr=document.createElement('button'); paIDr.type='button'; paIDr.className='nbtn'; paIDr.textContent='\u2190 Calc';
           (function(input){paIDr.onclick=function(){input.value=String(getCalcVal());input.focus();};})(aIDr);
           var aVDr=document.createElement('button'); aVDr.type='button'; aVDr.className='vbtn'; aVDr.textContent='Verifica ✓';
           var afDr=document.createElement('div'); afDr.className='fb';
@@ -2965,7 +2971,9 @@ function renderSteps(){
           var abDr=document.createElement('div'); abDr.className='nrow-btns';
           abDr.appendChild(paIDr); abDr.appendChild(aVDr);
           arDr.appendChild(aIDr); arDr.appendChild(abDr);
-          div.appendChild(arDr); div.appendChild(afDr);
+          var hintDr=document.createElement('div'); hintDr.className='nhint';
+          hintDr.textContent='Usa acos nella calcolatrice (GRAD per gon), poi "\u2190 Calc" per incollare.';
+          div.appendChild(arDr); div.appendChild(hintDr); div.appendChild(afDr);
         }
       } else {
         var od=document.createElement('div'); od.className='opts';
@@ -3043,7 +3051,7 @@ function injectSSteps(afterEl,greek,a0,a1,opL,S_){
         var nrow=document.createElement('div'); nrow.className='nrow';
         var inp=document.createElement('input'); inp.type='text'; inp.className='ninp';
         inp.placeholder='S in m²...';
-        var pbS=document.createElement('button'); pbS.type='button'; pbS.className='cb cb-fn cb-sm'; pbS.textContent='\u2190 Calc';
+        var pbS=document.createElement('button'); pbS.type='button'; pbS.className='nbtn'; pbS.textContent='\u2190 Calc';
         (function(input){pbS.onclick=function(){input.value=String(getCalcVal());input.focus();};})(inp);
         var vb=document.createElement('button'); vb.type='button'; vb.className='vbtn';
         vb.textContent='Verifica ✓';
