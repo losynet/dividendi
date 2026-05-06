@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TopoTrainer v5.4 — Divisioni Particelle Triangolari</title>
+<title>TopoTrainer v6.0 — Divisioni Particelle Triangolari</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -143,7 +143,7 @@ header{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 20p
 
 <header>
   <div class="logo">Topo<span>Trainer</span></div>
-  <div class="badge" style="font-size:0.6rem;">v5.4</div>
+  <div class="badge" style="font-size:0.6rem;">v6.0</div>
   <div class="badge">ITT Agraria · 3° Anno · Genio Rurale</div>
   <div class="badge" style="color:var(--acc);border-color:var(--acc);font-size:0.6rem;">Prof. Losenno &amp; Prof. D'Aranno</div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -347,6 +347,7 @@ header{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 20p
   <button type="button" class="btn btn-p" onclick="go()">&#9654; Avvia GeoSolver</button>
   <button type="button" class="btn btn-s" onclick="loadEx()">Carica Esempio</button>
   <button type="button" class="btn btn-s" onclick="resetAll()">&#8635; Reset</button>
+  <button type="button" class="btn btn-s" onclick="autoSolve()" style="background:var(--acc);color:#000;font-weight:700;" title="Soluzione automatica — richiede password">&#9997; Soluzione</button>
 </div>
 </div>
 
@@ -758,17 +759,15 @@ function computeV(){
   if(minVxSel!=='none'||maxVxSel!=='none'){
     var minQ=Math.min.apply(null,quotes);
     var maxQ=Math.max.apply(null,quotes);
-    // P1 = index 0, P2 = index nP-1
     var minTarget=minVxSel==='P1'?0:(minVxSel==='P2'?nP-1:-1);
     var maxTarget=maxVxSel==='P1'?0:(maxVxSel==='P2'?nP-1:-1);
-    // Try all rotations to satisfy both constraints
-    for(var r=0;r<nP;r++){
-      var rQ=rotLeft(quotes,r);
-      var okMin=(minTarget===-1)||(rQ.indexOf(minQ)===minTarget);
-      var okMax=(maxTarget===-1)||(rQ.indexOf(maxQ)===maxTarget);
-      if(okMin&&okMax){
-        if(r!==0){quotes=rQ; areas=rotLeft(areas,r);}
-        break;
+    var candidatesV=[quotes, quotes.slice().reverse()];
+    outerV: for(var ci=0;ci<candidatesV.length;ci++){
+      for(var r=0;r<nP;r++){
+        var rQ=rotLeft(candidatesV[ci],r);
+        var okMin=(minTarget===-1)||(rQ.indexOf(minQ)===minTarget);
+        var okMax=(maxTarget===-1)||(rQ.indexOf(maxQ)===maxTarget);
+        if(okMin&&okMax){quotes=rQ;break outerV;}
       }
     }
     apexSVal=(minVxSel!=='none'?'min_'+minVxSel:'')+(maxVxSel!=='none'?'_max_'+maxVxSel:'');
@@ -885,14 +884,23 @@ function computeP(){
 
   if(pMinVx!=='none'||pMaxVx!=='none'){
     var minQ=Math.min.apply(null,quotes), maxQ=Math.max.apply(null,quotes);
-    // V1 = index 0, V2 = index nP-1 in the base ordering
     var minTgt=pMinVx==='V1'?0:(pMinVx==='V2'?nP-1:-1);
     var maxTgt=pMaxVx==='V1'?0:(pMaxVx==='V2'?nP-1:-1);
-    for(var r=0;r<nP;r++){
-      var rQ=rotLeftP(quotes,r);
-      var okMn=(minTgt===-1)||(rQ.indexOf(minQ)===minTgt);
-      var okMx=(maxTgt===-1)||(rQ.indexOf(maxQ)===maxTgt);
-      if(okMn&&okMx){if(r!==0){quotes=rQ;areas=quotes.map(function(q){return S*q/tQ;});}break;}
+    var found=false;
+    // Try all rotations of original order AND reversed order
+    var candidates=[quotes, quotes.slice().reverse()];
+    outer: for(var ci=0;ci<candidates.length;ci++){
+      for(var r=0;r<nP;r++){
+        var rQ=rotLeftP(candidates[ci],r);
+        var okMn=(minTgt===-1)||(rQ.indexOf(minQ)===minTgt);
+        var okMx=(maxTgt===-1)||(rQ.indexOf(maxQ)===maxTgt);
+        if(okMn&&okMx){
+          quotes=rQ;
+          areas=quotes.map(function(q){return S*q/tQ;});
+          found=true;
+          break outer;
+        }
+      }
     }
   }
 
@@ -1030,11 +1038,14 @@ function computeC(){
     var minQ=Math.min.apply(null,quotes),maxQ=Math.max.apply(null,quotes);
     var minTgt=minVxC==='V1'?0:(minVxC==='V2'?nP-1:-1);
     var maxTgt=maxVxC==='V1'?0:(maxVxC==='V2'?nP-1:-1);
-    for(var r=0;r<nP;r++){
-      var rQ=rotLeft(quotes,r);
-      var okMn=(minTgt===-1)||(rQ.indexOf(minQ)===minTgt);
-      var okMx=(maxTgt===-1)||(rQ.indexOf(maxQ)===maxTgt);
-      if(okMn&&okMx){if(r!==0){quotes=rQ;areas=rotLeft(areas,r);}break;}
+    var candidatesC=[quotes, quotes.slice().reverse()];
+    outerC: for(var ci=0;ci<candidatesC.length;ci++){
+      for(var r=0;r<nP;r++){
+        var rQ=rotLeft(candidatesC[ci],r);
+        var okMn=(minTgt===-1)||(rQ.indexOf(minQ)===minTgt);
+        var okMx=(maxTgt===-1)||(rQ.indexOf(maxQ)===maxTgt);
+        if(okMn&&okMx){quotes=rQ;break outerC;}
+      }
     }
     apexSVal=(minVxC!=='none'?'min_'+minVxC:'')+(maxVxC!=='none'?'_max_'+maxVxC:'');
   }
@@ -1297,11 +1308,14 @@ function drawContent(ctx,W,H,d,sd){
     var dC2=[CA,CB,CG]; var ptL2=['D','E'];  // D and E only; EC is implicit
 
     // Area fills for completed sub-triangles
-    for(var i=0;i<showN;i++){
+    // showN dividers → showN filled areas. The LAST area (after last divider) fills only when sd=true.
+    var fillColors=['rgba(248,81,73,0.09)','rgba(240,165,0,0.08)','rgba(63,185,80,0.09)'];
+    var numFills = sd ? allBase.length-1 : showN;  // sd=all shown → fill all including last
+    for(var i=0;i<numFills;i++){
       ctx.beginPath();ctx.moveTo(PV.x,PV.y);
       ctx.lineTo(allBase[i].x,allBase[i].y);
       ctx.lineTo(allBase[i+1].x,allBase[i+1].y);
-      ctx.closePath();ctx.fillStyle=['rgba(248,81,73,0.09)','rgba(240,165,0,0.08)','rgba(63,185,80,0.09)'][i];ctx.fill();
+      ctx.closePath();ctx.fillStyle=fillColors[i%3];ctx.fill();
     }
 
     // Main triangle outline
@@ -1313,14 +1327,32 @@ function drawContent(ctx,W,H,d,sd){
       ctx.beginPath();ctx.moveTo(PV.x,PV.y);ctx.lineTo(divPts[i].x,divPts[i].y);
       ctx.strokeStyle=dC2[i];ctx.lineWidth=1.8;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
       ctx.beginPath();ctx.arc(divPts[i].x,divPts[i].y,4,0,Math.PI*2);ctx.fillStyle=dC2[i];ctx.fill();
-      ctx.font='11px Space Mono,monospace';ctx.fillStyle=dC2[i];
-      if(i<ptL2.length) ctx.fillText(ptL2[i],divPts[i].x-4,oy+17);
-      ctx.font='10px Space Mono,monospace';ctx.fillStyle=dC2[i];
-      ctx.fillText(ff(d.baseDists[i])+'m',(allBase[i].x+allBase[i+1].x)/2-18,oy+30);
+      // Point label on baseline (D, E, F...)
+      ctx.font='bold 11px Space Mono,monospace';ctx.fillStyle=dC2[i];ctx.textAlign='center';
+      if(i<ptL2.length) ctx.fillText(ptL2[i],divPts[i].x,oy+14);
+      ctx.textAlign='left';
+      // Segment length label: drawn ABOVE the baseline inside the triangle
+      var segMidX=(allBase[i].x+allBase[i+1].x)/2;
+      ctx.font='9px Space Mono,monospace';ctx.fillStyle=dC2[i];ctx.textAlign='center';
+      ctx.fillText(ff(d.baseDists[i])+'m', segMidX, oy-8);
+      ctx.textAlign='left';
+      // Area label centroid
       ctx.font='11px Space Mono,monospace';ctx.fillStyle=dC2[i];
       ctx.fillText(['S\u2081','S\u2082','S\u2083'][i],
         (PV.x+allBase[i].x+allBase[i+1].x)/3-6,
         (PV.y+allBase[i].y+allBase[i+1].y)/3+4);
+    }
+    // Last area label (S₃ or Sn) when all dividers are shown
+    if(sd && allBase.length>=3){
+      var last=allBase.length-1;
+      ctx.font='11px Space Mono,monospace';ctx.fillStyle=dC2[(last-1)%3]||CG;
+      ctx.fillText(['S\u2081','S\u2082','S\u2083'][last-1]||'S',
+        (PV.x+allBase[last-1].x+allBase[last].x)/3-6,
+        (PV.y+allBase[last-1].y+allBase[last].y)/3+4);
+      // Last segment length
+      ctx.font='9px Space Mono,monospace';ctx.fillStyle=dC2[(last-1)%3]||CG;ctx.textAlign='center';
+      ctx.fillText(ff(d.baseDists[last-1])+'m',(allBase[last-1].x+allBase[last].x)/2,oy-8);
+      ctx.textAlign='left';
     }
 
     ctx.font='bold 13px Syne,sans-serif';ctx.fillStyle=CT;
@@ -1936,7 +1968,15 @@ function copyResult(){
 }
 
 // ── Get current value for "← Calc" paste ────────
+// Always reads the numeric display value, never re-evaluates the expression.
+// This avoids angle-unit bugs when the expression contains trig functions.
 function getCalcVal(){
+  var numEl = document.getElementById('cNum');
+  if(numEl && numEl.value && numEl.value !== '' && numEl.value !== 'Errore'){
+    var v = parseFloat(numEl.value.replace(',','.'));
+    if(isFinite(v)) return v;
+  }
+  // Fallback: evaluate current expression
   var v = _eval(cExpr);
   return isFinite(v) ? v : parseFloat(cExpr) || 0;
 }
@@ -2100,15 +2140,20 @@ function buildDataButtons(d){
     }
     d.quotes.forEach(function(q,i){ pairs.push({lbl:['m','n','p'][i]+'='+ff(q),val:q}); });
   } else {
+    // Caso B — show only user-input values
     pairs=[
       {lbl:'c (AB)='+ff(d.AB), val:d.AB},
       {lbl:'b (AC)='+ff(d.AC), val:d.AC},
-      (function(){
-        var _aU=d.aU||'deg';
-        var _ul=_aU==='grad'?' gon':_aU==='rad'?' rad':'°';
-        return {lbl:'α='+ff(d.aVal||d.ad,4)+_ul, val:d.aVal||d.ad};
-      })(),
     ];
+    if(d.mode!=='LLL'&&d.knownAngle&&d.aVal!=null){
+      // Angle was user input — show it
+      var _aU=d.aU||'deg';
+      var _ul=_aU==='grad'?' gon':_aU==='rad'?' rad':'°';
+      pairs.push({lbl:d.knownAngle+'='+ff(d.aVal,4)+_ul, val:d.aVal});
+    } else {
+      // All 3 sides were input — show BC
+      pairs.push({lbl:'a (BC)='+ff(d.BC), val:d.BC});
+    }
     d.quotes.forEach(function(q,i){
       pairs.push({lbl:['m','n','p'][i]+'='+ff(q), val:q});
     });
@@ -2195,10 +2240,12 @@ function buildV(d){
       unlock:{lbl:oppSide+'='+ff(computedSideVal)+' m', val:computedSideVal},
       setFlag:'BCknown',
       q:'Applica: <b>'+oppSide+' = √('+adjA+'² + '+adjB+'² − 2·'+adjA+'·'+adjB+'·cos('+gAng+'))</b><br>'
-        +'<b style="color:var(--acc)">⚠ Calcolatrice in modalità '+(d.aU==='grad'?'GRAD':'DEG')+' per calcolare cos('+gAng+')</b><br>'
+        +'<b style="color:var(--acc)">⚠ Imposta la calcolatrice in modalità '+(d.aU==='grad'?'GRAD (gon)':'DEG (°)')
+        +' prima di premere =</b><br>'
+        +'Digita l\'espressione, premi <b>=</b>, poi clicca <b>← Calc</b> per incollare.<br>'
         +'Inserisci '+oppSide+' in m:',
       ok:'✓ Corretto! Ora conosci tutti e tre i lati.',
-      err:'✗ Il risultato non torna. Controlla: (1) l\'unità angolare nella calcolatrice sia '+(d.aU==='grad'?'GRAD':'DEG')+', (2) di aver applicato la radice quadrata all\'intera espressione.',
+      err:'✗ Il valore non è corretto. Hai premuto = prima di cliccare ← Calc? La calcolatrice era in modalità '+(d.aU==='grad'?'GRAD':'DEG')+'?',
     });
   }
 
@@ -2485,35 +2532,81 @@ function buildP(d){
   }
 
   st.push({type:'choice',
-    q:'Hai tutti e tre i lati. Qual \u00e8 il <b>passo logico successivo</b>?',
+    q:'Hai tutti e tre i lati. Qual è il <b>passo logico successivo</b> per trovare S?',
     opts:shuffle([
-      {t:'Calcolare l\u2019area totale S del triangolo.',c:true},
+      {t:'Calcolare prima un angolo con il teorema del coseno, poi S = ½·a·b·sin(angolo).',c:true},
       {t:'Dividere subito i lati '+side1+' e '+side2+' in base alle quote.',c:false},
-      {t:'Trovare direttamente le dividenti con il teorema dei seni.',c:false},
-      {t:'Trovare tutti gli angoli del triangolo prima di procedere.',c:false},
+      {t:'S si calcola direttamente con S = lato₁ × lato₂ senza angolo.',c:false},
+      {t:'Usare la formula di Pitagora per trovare l\'altezza.',c:false},
     ]),
-    ok:'\u2713 Esatto! Prima S totale, poi le aree parziali, poi le distanze con la \u221a.',
-    err:'\u2717 Senza l\u2019area totale non \u00e8 possibile calcolare le aree parziali. Qual \u00e8 la grandezza fondamentale da trovare per prima?',
+    ok:'✓ Esatto! Con 3 lati: teorema del coseno → angolo → S = ½·a·b·sin(angolo). Oppure la formula di Erone.',
+    err:'✗ Con 3 lati noti bisogna prima calcolare un angolo (teorema del coseno) e poi usarlo in S = ½·a·b·sin(angolo).',
   });
 
-  st.push({type:'choice',
-    q:'Quale formula usi per l\u2019area S?',
-    opts:shuffle([
-      {t:'S = \u00bd \u00b7 '+adjA+' \u00b7 '+adjB+' \u00b7 sin('+gAng+')',c:true},
-      {t:'S = \u00bd \u00b7 '+adjA+' \u00b7 BC \u00b7 sin('+gAng+')',c:false},
-      {t:'S = '+adjA+' \u00b7 '+adjB+' \u00b7 sin('+gAng+')',c:false},
-      {t:'S = \u00bd \u00b7 '+adjA+' \u00b7 '+adjB+' \u00b7 cos('+gAng+')',c:false},
-    ]),
-    ok:'\u2713 Corretto! S = \u00bd\u00b7'+adjA+'\u00b7'+adjB+'\u00b7sin('+gAng+'). Due lati adiacenti e il SENO.',
-    err:'\u2717 Per l\u2019area con due lati e angolo compreso, quale funzione trigonometrica usi e qual \u00e8 il fattore moltiplicativo?',
-  });
+  if(d.mode==='LLL'){
+    // Build vtxData for all three vertices so student can choose which angle to compute
+    var vtxDataP={};
+    var angleAdjP={'A':['AB','AC'],'B':['AB','BC'],'C':['AC','BC']};
+    var angleOppP={'A':'BC','B':'AC','C':'AB'};
+    var vToGP={'A':'α','B':'β','C':'γ'};
+    var sideLenP={'AB':AB,'AC':AC,'BC':BC};
+    ['A','B','C'].forEach(function(V){
+      var ad=angleAdjP[V],op=angleOppP[V];
+      var l1=sideLenP[ad[0]],l2=sideLenP[ad[1]],l3=sideLenP[op];
+      var cv=Math.max(-1,Math.min(1,(l1*l1+l2*l2-l3*l3)/(2*l1*l2)));
+      var ar=Math.acos(cv);
+      vtxDataP[V]={g:vToGP[V],ad0:ad[0],ad1:ad[1],op:op,
+        cosV:cv, angD:ar*180/Math.PI, angG:ar*200/Math.PI};
+    });
 
-  st.push({type:'numeric',val:S,unit:'m\u00b2',
-    unlock:{lbl:'S='+ff(S)+' m\u00b2',val:S},
-    q:'Calcola <b>S = \u00bd \u00b7 '+adjA+' \u00b7 '+adjB+' \u00b7 sin('+gAng+')</b><br>'+(d.aU?'<b style="color:var(--acc)">\u26a0 Calcolatrice in modalit\u00e0 '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>':'')+'Inserisci S in m\u00b2:',
-    ok:'\u2713 S calcolata correttamente.',
-    err:'\u2717 Non \u00e8 corretto. Controlla l\u2019unit\u00e0 angolare e riapplica S = \u00bd \u00b7 '+adjA+' \u00b7 '+adjB+' \u00b7 sin('+gAng+').',
-  });
+    st.push({type:'angleChoice',
+      q:'Quale angolo vuoi calcolare? (tutti portano allo stesso risultato per S)',
+      opts:[
+        {t:'α — angolo in A (tra AB e AC, opposto a BC)', c:true, vx:'A'},
+        {t:'β — angolo in B (tra AB e BC, opposto ad AC)', c:true, vx:'B'},
+        {t:'γ — angolo in C (tra AC e BC, opposto ad AB)', c:true, vx:'C'},
+      ],
+      ok:'✓ Ottima scelta. Ora scegli come calcolarlo.',
+      err:'',
+    });
+
+    st.push({type:'pathChoice',
+      q:'Quale percorso usi?',
+      opts:[
+        {t:'<b>Classico</b>: prima cos(γ) = (a²+b²−c²)/(2ab), poi γ = acos(cos(γ))', c:true, path:'cos_acos'},
+        {t:'<b>Diretto</b>: γ = acos[(a²+b²−c²)/(2ab)] in un solo passaggio',          c:true, path:'direct_acos'},
+      ],
+      ok:'✓ Procedi.',
+      err:'',
+    });
+
+    st.push({type:'angleFormula',
+      vtxData:vtxDataP,
+      S:S,
+    });
+  } else {
+    // LLA mode: angle already known, go straight to S formula + numeric
+    st.push({type:'choice',
+      q:'Quale formula usi per l\'area S con i lati <b>'+adjA+'</b>, <b>'+adjB+'</b> e l\'angolo <b>'+gAng+'</b>?',
+      opts:shuffle([
+        {t:'S = ½ · '+adjA+' · '+adjB+' · sin('+gAng+')',c:true},
+        {t:'S = ½ · '+adjA+' · '+adjB+' · cos('+gAng+')',c:false},
+        {t:'S = '+adjA+' · '+adjB+' · sin('+gAng+')',c:false},
+        {t:'S = ½ · '+adjA+' · '+adjB+' (senza angolo)',c:false},
+      ]),
+      ok:'✓ Corretto! S = ½·'+adjA+'·'+adjB+'·sin('+gAng+'). Due lati adiacenti e il SENO.',
+      err:'✗ Per l\'area con due lati e angolo compreso: quale funzione trigonometrica usi e qual è il fattore moltiplicativo?',
+    });
+
+    st.push({type:'numeric',val:S,unit:'m²',
+      unlock:{lbl:'S='+ff(S)+' m²',val:S},
+      q:'Calcola <b>S = ½ · '+adjA+' · '+adjB+' · sin('+gAng+')</b><br>'
+        +(d.aU?'<b style="color:var(--acc)">⚠ Calcolatrice in modalità '+(d.aU==='grad'?'GRAD':'DEG')+'</b><br>':'')
+        +'Inserisci S in m²:',
+      ok:'✓ S calcolata correttamente.',
+      err:'✗ Non è corretto. Controlla l\'unità angolare e riapplica S = ½·'+adjA+'·'+adjB+'·sin('+gAng+').',
+    });
+  }
 
   var apexStripQuote=quotes[nP-1];
   var minQ=Math.min.apply(null,quotes),maxQ=Math.max.apply(null,quotes);
@@ -3106,7 +3199,147 @@ function resetAll(){
 
 window.addEventListener('resize',function(){if(solverData)drawScene();});
 
-// ─── GRADING ─────────────────────────────────────
+// ─── AUTO SOLVE (password protected) ─────────────
+function autoSolve(){
+  // Show password modal
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--s1);border:1px solid var(--bor);border-radius:12px;padding:28px 32px;min-width:280px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+  box.innerHTML='<div style="font-family:var(--sans);font-size:1rem;font-weight:700;color:var(--acc);">🔒 Accesso Riservato</div>'
+    +'<div style="font-family:var(--mono);font-size:0.75rem;color:var(--mut);">Inserisci la password per visualizzare la soluzione completa.</div>';
+  var inp=document.createElement('input');
+  inp.type='password';
+  inp.placeholder='Password…';
+  inp.style.cssText='font-family:var(--mono);font-size:0.9rem;padding:9px 12px;border-radius:7px;border:1px solid var(--bor);background:var(--s2);color:var(--txt);outline:none;width:100%;box-sizing:border-box;';
+  var errMsg=document.createElement('div');
+  errMsg.style.cssText='font-family:var(--mono);font-size:0.7rem;color:#f85149;display:none;';
+  errMsg.textContent='⚠ Password errata.';
+  var btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:8px;';
+  var btnOk=document.createElement('button');
+  btnOk.type='button';
+  btnOk.textContent='Conferma';
+  btnOk.style.cssText='flex:2;padding:9px;border-radius:7px;border:none;background:var(--acc);color:#000;font-family:var(--sans);font-size:0.8rem;font-weight:700;cursor:pointer;';
+  var btnCancel=document.createElement('button');
+  btnCancel.type='button';
+  btnCancel.textContent='Annulla';
+  btnCancel.style.cssText='flex:1;padding:9px;border-radius:7px;border:1px solid var(--bor);background:var(--s2);color:var(--mut);font-family:var(--sans);font-size:0.8rem;cursor:pointer;';
+  btnRow.appendChild(btnOk); btnRow.appendChild(btnCancel);
+  box.appendChild(inp); box.appendChild(errMsg); box.appendChild(btnRow);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(function(){inp.focus();},50);
+
+  function close(){ document.body.removeChild(overlay); }
+  btnCancel.onclick=close;
+  overlay.onclick=function(e){if(e.target===overlay)close();};
+
+  function check(){
+    if(inp.value==='prof'){
+      close();
+      runAutoSolve();
+    } else {
+      errMsg.style.display='block';
+      inp.value='';
+      inp.focus();
+    }
+  }
+  btnOk.onclick=check;
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
+}
+
+function runAutoSolve(){
+  // Compute the solution data
+  var d=curCase==='vertex'?computeV():curCase==='perp'?computeC():computeP();
+  if(!d||d.err){
+    alert('Dati insufficienti: '+((d&&d.err)||'controlla i campi di input.'));
+    return;
+  }
+  solverData=d;
+  showDiv=true;
+  zoom=1;panX=0;panY=0;
+
+  // Show canvas with all dividers
+  var mc=document.getElementById('mc');
+  mc.style.display='block';
+  document.getElementById('cph').style.display='none';
+  var pill=document.getElementById('mpill');
+  pill.className='mpill '+(curCase==='vertex'?'v':curCase==='perp'?'v':'p');
+  pill.textContent=curCase==='vertex'?'Caso A':curCase==='perp'?'Caso C':'Caso B';
+  pill.classList.remove('hide');
+  partialDividers=99;
+  requestAnimationFrame(function(){drawScene();});
+
+  // Build and display the solution panel
+  var solv=document.getElementById('solv');
+  solv.innerHTML='';
+
+  var title=document.createElement('div');
+  title.style.cssText='font-family:var(--sans);font-size:0.85rem;font-weight:700;color:var(--acc);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bor);';
+  title.innerHTML='&#10003; Soluzione Completa';
+  solv.appendChild(title);
+
+  // Build result table
+  var results=[];
+
+  if(d.type==='vertex'){
+    // Missing side if LLA
+    if(d.unknownSide) results.push({lbl:d.unknownSide+' (calcolato)', val:ff(d[d.unknownSide.toLowerCase()]||{AB:d.AB,BC:d.BC,AC:d.AC}[d.unknownSide]), unit:'m'});
+    results.push({lbl:'S totale', val:ff(d.S), unit:'m²'});
+    d.areas.forEach(function(a,i){ results.push({lbl:'S'+'₁₂₃'[i]+' (quota '+d.quotes[i]+')', val:ff(a), unit:'m²'}); });
+    d.baseDists.forEach(function(b,i){
+      var lbl=i===0?'BD':i===1?'DE':'EF';
+      results.push({lbl:lbl, val:ff(b), unit:'m'});
+    });
+  } else if(d.type==='parallel'){
+    if(d.unknownSide) results.push({lbl:d.unknownSide+' (calcolato)', val:ff({AB:d.AB,BC:d.BC,AC:d.AC}[d.unknownSide]), unit:'m'});
+    results.push({lbl:'S totale', val:ff(d.S), unit:'m²'});
+    d.areas.forEach(function(a,i){ results.push({lbl:'S'+'₁₂₃'[i]+' (quota '+d.quotes[i]+')', val:ff(a), unit:'m²'}); });
+    var apex=d.apexV2||'C';
+    var ptL1=['D','F'], ptL2=['E','G'];
+    (d.dFromApex1||[]).forEach(function(v,i){ results.push({lbl:apex+ptL1[i]+' su '+((d.pBase==='BC'?'AB':d.pBase==='AC'?'AB':'CA')), val:ff(v), unit:'m'}); });
+    (d.dFromApex2||[]).forEach(function(v,i){ results.push({lbl:apex+ptL2[i]+' su '+((d.pBase==='BC'?'AC':d.pBase==='AC'?'BC':'CB')), val:ff(v), unit:'m'}); });
+  } else if(d.type==='perp'){
+    if(d.unknownSide) results.push({lbl:d.unknownSide+' (calcolato)', val:ff({AB:d.AB,BC:d.BC,AC:d.AC}[d.unknownSide]), unit:'m'});
+    results.push({lbl:'S totale', val:ff(d.S), unit:'m²'});
+    results.push({lbl:'h (altezza su '+d.perpTo+')', val:ff(d.h), unit:'m'});
+    d.areas.forEach(function(a,i){ results.push({lbl:'S'+'₁₂₃'[i]+' (quota '+d.quotes[i]+')', val:ff(a), unit:'m²'}); });
+    var ptLabsC=[['G','H'],['E','F']];
+    d.dividers.forEach(function(dv,i){
+      var isL=dv.side==='L1';
+      var fromV=i===0?d.vB1:d.vB2;
+      var ptF=ptLabsC[i]?ptLabsC[i][0]:'?';
+      var ptS=ptLabsC[i]?ptLabsC[i][1]:'?';
+      var footDist=isL?dv.fx:(d.baseLenC-dv.fx);
+      var dSide=isL?dv.dFromVB1_side:dv.dFromVB2_side;
+      results.push({lbl:fromV+ptF+' su '+d.perpTo, val:ff(footDist), unit:'m'});
+      if(dSide!=null) results.push({lbl:fromV+ptS+' su '+(isL?(d.perpTo==='BC'?'AB':d.perpTo==='AC'?'AB':'AC'):(d.perpTo==='BC'?'AC':d.perpTo==='AC'?'BC':'BC')), val:ff(dSide), unit:'m'});
+    });
+  }
+
+  // Render as cards
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;';
+  results.forEach(function(r){
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--s2);border:1px solid var(--bor);border-radius:7px;padding:7px 10px;';
+    card.innerHTML='<div style="font-family:var(--mono);font-size:0.6rem;color:var(--mut);">'+r.lbl+'</div>'
+      +'<div style="font-family:var(--mono);font-size:0.88rem;font-weight:700;color:var(--txt);">'+r.val+' <span style="font-size:0.6rem;color:var(--mut);">'+r.unit+'</span></div>';
+    grid.appendChild(card);
+    // Unlock in data panel too
+    unlockDataValue(r.lbl+'='+r.val, parseFloat(r.val));
+  });
+  solv.appendChild(grid);
+
+  // Show result area
+  document.getElementById('compb').className='compb on';
+  var ra=document.getElementById('resArea'); ra.style.display='flex';
+  var rgrid=document.getElementById('resGrid'); rgrid.innerHTML='';
+  results.forEach(function(r){ addR(rgrid,r.lbl,r.val,r.unit); });
+}
+
+
 function computeGrade(){
   var total=steps.length; if(total===0)return null;
   var firstOk=0,retries=0;
@@ -3254,7 +3487,7 @@ function generatePDF(){
     +'table{width:100%;border-collapse:collapse;font-size:11px;}'
     +'th{background:#f0a500;color:#000;padding:5px 8px;text-align:left;}'
     +'<\/style><\/head><body>'
-    +'<h1>Report TopoTrainer v5.4 &mdash; '+date+'<\/h1>'
+    +'<h1>Report TopoTrainer v6.0 &mdash; '+date+'<\/h1>'
     +'<div class="g">'
     +'<div class="b"><div class="l">Studente<\/div><div class="v">'+name+'<\/div><\/div>'
     +'<div class="b"><div class="l">Classe<\/div><div class="v">'+cls+'<\/div><\/div>'
@@ -3269,7 +3502,7 @@ function generatePDF(){
     +'<table><tr><th>#<\/th><th>Domanda<\/th><th>Esito<\/th><\/tr>'+rows+'<\/table>'
     +'<button class="printbtn" onclick="window.print()" style="margin-top:14px;padding:10px 20px;background:#f0a500;border:none;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">Stampa \/ Salva PDF<\/button>'
     +'<p style="margin-top:16px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:6px;">'
-    +'TopoTrainer v5.4 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
+    +'TopoTrainer v6.0 &mdash; ITT Agraria &middot; Genio Rurale &mdash; Prof. Losenno &amp; Prof. D\'Aranno<\/p>'
     +'<\/body><\/html>';
 
   // Open print dialog directly in a new window — no file download
